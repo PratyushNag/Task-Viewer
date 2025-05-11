@@ -45,12 +45,15 @@ const TaskList: React.FC<TaskListProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="rounded-lg shadow p-6" style={{ backgroundColor: '#C2AFF0' }}>
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+        <h2 className="text-xl font-semibold text-space-cadet">{title}</h2>
         <button
           onClick={() => setIsFormOpen(true)}
-          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-royal-purple"
+          style={{ backgroundColor: '#7E52A0' }}
+          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#29274C' }}
+          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#7E52A0' }}
         >
           Add Task
         </button>
@@ -58,7 +61,7 @@ const TaskList: React.FC<TaskListProps> = ({
 
       {tasks.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-gray-500">{emptyMessage}</p>
+          <p className="text-space-cadet/70">{emptyMessage}</p>
         </div>
       ) : (
         <>
@@ -79,8 +82,8 @@ const TaskList: React.FC<TaskListProps> = ({
                 onClick={() => handlePageChange(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
                 className={`px-3 py-1 rounded-md text-sm font-medium ${currentPage === 1
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-lilac/30 text-space-cadet/50 cursor-not-allowed'
+                  : 'bg-space-cadet/20 text-space-cadet hover:bg-royal-purple/30'
                   }`}
                 aria-label="Previous page"
               >
@@ -93,8 +96,8 @@ const TaskList: React.FC<TaskListProps> = ({
                   key={page}
                   onClick={() => handlePageChange(page)}
                   className={`px-3 py-1 rounded-md text-sm font-medium ${currentPage === page
-                      ? 'bg-indigo-100 text-indigo-700'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    ? 'bg-lilac text-white'
+                    : 'bg-space-cadet/20 text-space-cadet hover:bg-royal-purple/30'
                     }`}
                   aria-label={`Page ${page}`}
                   aria-current={currentPage === page ? 'page' : undefined}
@@ -107,8 +110,8 @@ const TaskList: React.FC<TaskListProps> = ({
                 onClick={() => handlePageChange(Math.min(totalPages, currentPage + 1))}
                 disabled={currentPage === totalPages}
                 className={`px-3 py-1 rounded-md text-sm font-medium ${currentPage === totalPages
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  ? 'bg-lilac/30 text-space-cadet/50 cursor-not-allowed'
+                  : 'bg-space-cadet/20 text-space-cadet hover:bg-royal-purple/30'
                   }`}
                 aria-label="Next page"
               >

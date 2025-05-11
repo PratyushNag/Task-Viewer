@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 
 const Header: React.FC = () => {
@@ -17,7 +18,18 @@ const Header: React.FC = () => {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-white">Calendar View</h1>
+              <div className="flex items-center">
+                <Image
+                  src="/Shreeyafavicon.svg"
+                  alt="Shreeya Logo"
+                  width={100}
+                  height={100}
+                  className="mr-3"
+                  priority
+                  style={{ objectFit: 'contain', maxHeight: '100%' }}
+                />
+                <h1 className="text-xl font-bold text-white">Calendar View</h1>
+              </div>
             </div>
             <nav className="ml-6 flex flex-wrap gap-4 sm:gap-8">
               <Link

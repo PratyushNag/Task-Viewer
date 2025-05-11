@@ -17,6 +17,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Calendar View",
   description: "A simple calendar view application for managing tasks and milestones",
+  icons: {
+    icon: '/Shreeyafavicon.svg',
+    apple: '/Shreeyafavicon.svg',
+  },
 };
 
 export default function RootLayout({
