@@ -97,7 +97,7 @@ export default function MilestonesPage() {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-royal-purple"></div>
       </div>
     );
   }
@@ -110,20 +110,20 @@ export default function MilestonesPage() {
           <div className="flex space-x-2">
             <button
               onClick={goToPreviousMonth}
-              className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-md"
+              className="px-3 py-1 bg-space-cadet hover:bg-royal-purple text-white rounded-md"
               aria-label="Previous month"
             >
               &lt;
             </button>
             <button
               onClick={goToCurrentMonth}
-              className="px-3 py-1 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-md"
+              className="px-3 py-1 bg-lilac hover:bg-royal-purple text-white rounded-md"
             >
               Today
             </button>
             <button
               onClick={goToNextMonth}
-              className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded-md"
+              className="px-3 py-1 bg-space-cadet hover:bg-royal-purple text-white rounded-md"
               aria-label="Next month"
             >
               &gt;
@@ -156,8 +156,8 @@ export default function MilestonesPage() {
           <button
             onClick={() => setFilter('all')}
             className={`px-4 py-2 rounded-md text-sm font-medium ${filter === 'all'
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? 'bg-lilac text-white'
+              : 'text-gray-700 hover:bg-space-cadet hover:text-white'
               }`}
           >
             All
@@ -165,8 +165,8 @@ export default function MilestonesPage() {
           <button
             onClick={() => setFilter('upcoming')}
             className={`px-4 py-2 rounded-md text-sm font-medium ${filter === 'upcoming'
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? 'bg-lilac text-white'
+              : 'text-gray-700 hover:bg-space-cadet hover:text-white'
               }`}
           >
             Upcoming
@@ -174,8 +174,8 @@ export default function MilestonesPage() {
           <button
             onClick={() => setFilter('past')}
             className={`px-4 py-2 rounded-md text-sm font-medium ${filter === 'past'
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? 'bg-lilac text-white'
+              : 'text-gray-700 hover:bg-space-cadet hover:text-white'
               }`}
           >
             Past

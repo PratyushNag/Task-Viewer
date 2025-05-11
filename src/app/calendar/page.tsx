@@ -158,8 +158,8 @@ export default function CalendarPage() {
       if (milestone.completed) {
         style.backgroundColor = '#9CA3AF'; // Gray for completed milestones
       } else {
-        style.backgroundColor = '#8B5CF6'; // Purple for milestones
-        style.borderLeft = '4px solid #6D28D9';
+        style.backgroundColor = '#7E52A0'; // Royal Purple for milestones
+        style.borderLeft = '4px solid #29274C'; // Space Cadet border
       }
     }
 
@@ -186,7 +186,7 @@ export default function CalendarPage() {
   if (tasksLoading || milestonesLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-royal-purple"></div>
       </div>
     );
   }
@@ -203,8 +203,8 @@ export default function CalendarPage() {
           <button
             onClick={() => setView(Views.MONTH)}
             className={`px-4 py-2 rounded-md text-sm font-medium ${view === Views.MONTH
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? 'bg-lilac text-white'
+              : 'text-gray-700 hover:bg-space-cadet hover:text-white'
               }`}
           >
             Month
@@ -212,8 +212,8 @@ export default function CalendarPage() {
           <button
             onClick={() => setView(Views.WEEK)}
             className={`px-4 py-2 rounded-md text-sm font-medium ${view === Views.WEEK
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? 'bg-lilac text-white'
+              : 'text-gray-700 hover:bg-space-cadet hover:text-white'
               }`}
           >
             Week
@@ -221,8 +221,8 @@ export default function CalendarPage() {
           <button
             onClick={() => setView(Views.DAY)}
             className={`px-4 py-2 rounded-md text-sm font-medium ${view === Views.DAY
-              ? 'bg-indigo-100 text-indigo-700'
-              : 'text-gray-700 hover:bg-gray-100'
+              ? 'bg-lilac text-white'
+              : 'text-gray-700 hover:bg-space-cadet hover:text-white'
               }`}
           >
             Day

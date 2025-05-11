@@ -231,7 +231,7 @@ export default function WeekPage() {
   if (tasksLoading || milestonesLoading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-royal-purple"></div>
       </div>
     );
   }
@@ -260,7 +260,7 @@ export default function WeekPage() {
           </select>
           <button
             onClick={() => setSelectedWeek(parseInt(String(selectedWeek || weekNumber)))}
-            className="ml-2 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+            className="ml-2 px-4 py-2 bg-royal-purple text-white rounded-md hover:bg-space-cadet"
           >
             Go
           </button>
@@ -296,8 +296,8 @@ export default function WeekPage() {
                       <button
                         onClick={() => setSelectedWeek(week)}
                         className={`px-4 py-3 rounded-lg text-center min-w-[80px] flex-shrink-0 transition-colors ${(selectedWeek || weekNumber) === week
-                          ? 'bg-gray-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          ? 'bg-royal-purple text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-royal-purple hover:text-white'
                           }`}
                       >
                         <div className="font-medium">Week</div>
@@ -351,10 +351,10 @@ export default function WeekPage() {
 
         <button
           onClick={goToCurrentWeek}
-          className="px-4 py-2 bg-indigo-100 hover:bg-indigo-200 text-indigo-700 rounded-md flex items-center"
+          className="px-4 py-2 bg-lilac hover:bg-royal-purple text-white rounded-md flex items-center"
         >
           <span className="mr-2">Today</span>
-          <span className="text-xs bg-indigo-200 px-2 py-1 rounded-full">
+          <span className="text-xs bg-space-cadet text-white px-2 py-1 rounded-full">
             {getCurrentDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
         </button>
@@ -368,8 +368,8 @@ export default function WeekPage() {
             <button
               onClick={() => setActiveView('milestones')}
               className={`block text-left py-2 font-medium ${activeView === 'milestones'
-                ? 'text-gray-900 border-l-4 border-indigo-600 -ml-4 pl-3'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'text-white border-l-4 border-lilac -ml-4 pl-3 bg-lilac'
+                : 'text-white hover:text-white bg-space-cadet hover:bg-lilac'
                 }`}
             >
               Milestones
@@ -377,8 +377,8 @@ export default function WeekPage() {
             <button
               onClick={() => setActiveView('weeks')}
               className={`block text-left py-2 font-medium ${activeView === 'weeks'
-                ? 'text-gray-900 border-l-4 border-indigo-600 -ml-4 pl-3'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'text-white border-l-4 border-lilac -ml-4 pl-3 bg-lilac'
+                : 'text-white hover:text-white bg-space-cadet hover:bg-lilac'
                 }`}
             >
               Weeks
