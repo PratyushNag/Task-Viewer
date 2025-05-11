@@ -1,103 +1,228 @@
-import Image from "next/image";
+'use client';
+
+import React, { useMemo, useState } from 'react';
+import { useTaskContext, useMilestoneContext } from '@/context';
+import {
+  getAllPhases,
+  getTasksForPhase,
+  getMilestonesForPhase
+} from '@/utils/dataLoader';
+import TaskList from '@/components/tasks/TaskList';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { state: { tasks, loading: tasksLoading } } = useTaskContext();
+  const { state: { milestones, loading: milestonesLoading } } = useMilestoneContext();
+  const [selectedPhase, setSelectedPhase] = useState<number | null>(null);
+  const [expandedWeeks, setExpandedWeeks] = useState<Record<string, boolean>>({});
+  const [activeView, setActiveView] = useState<'milestones' | 'weeks'>('milestones');
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Get all phases from tasks and milestones
+  const phases = useMemo(() => {
+    return getAllPhases(tasks, milestones);
+  }, [tasks, milestones]);
+
+  // Set the first phase as selected when data is loaded
+  React.useEffect(() => {
+    if (phases.length > 0 && selectedPhase === null) {
+      setSelectedPhase(phases[0]);
+    }
+  }, [phases, selectedPhase]);
+
+  // Toggle expanded state for a week
+  const toggleWeek = (weekNumber: number) => {
+    setExpandedWeeks(prev => ({
+      ...prev,
+      [weekNumber]: !prev[weekNumber]
+    }));
+  };
+
+  // Get phase name based on phase number
+  const getPhaseName = (phase: number): string => {
+    const phaseNames: Record<number, string> = {
+      0: 'Foundation',
+      1: 'Development',
+      2: 'Testing',
+      3: 'Prelims',
+      4: 'Mains'
+    };
+    return phaseNames[phase] || `Phase ${phase}`;
+  };
+
+  // Render loading state
+  if (tasksLoading || milestonesLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  // Get tasks and milestones for the selected phase
+  const phaseTasks = selectedPhase !== null ? getTasksForPhase(selectedPhase, tasks) : [];
+  const phaseMilestones = selectedPhase !== null ? getMilestonesForPhase(selectedPhase, milestones) : [];
+
+  // Group tasks by week
+  const tasksByWeek: Record<number, typeof tasks> = {};
+  phaseTasks.forEach(task => {
+    if (task.weekNumber) {
+      if (!tasksByWeek[task.weekNumber]) {
+        tasksByWeek[task.weekNumber] = [];
+      }
+      tasksByWeek[task.weekNumber].push(task);
+    }
+  });
+
+  // Get all weeks in this phase
+  const phaseWeeks = Object.keys(tasksByWeek).map(Number).sort((a, b) => a - b);
+
+  return (
+    <div className="space-y-8">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold text-gray-900">Phase View</h1>
+      </div>
+
+      {/* Phase Selection */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Phases</h2>
+        <div className="flex flex-wrap gap-4">
+          {phases.map(phase => (
+            <button
+              key={phase}
+              onClick={() => setSelectedPhase(phase)}
+              className={`px-6 py-4 rounded-lg text-center min-w-[180px] transition-colors ${selectedPhase === phase
+                ? 'bg-gray-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+            >
+              <div className="font-medium">Phase {phase}:</div>
+              <div className="font-semibold">{getPhaseName(phase)}</div>
+            </button>
+          ))}
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+
+      {selectedPhase !== null && (
+        <div className="flex">
+          {/* Left sidebar with toggle buttons */}
+          <div className="w-48 flex-shrink-0 mr-6">
+            <div className="border-l-4 border-gray-300 pl-4 space-y-6">
+              <button
+                onClick={() => setActiveView('milestones')}
+                className={`block text-left py-2 font-medium ${activeView === 'milestones'
+                    ? 'text-gray-900 border-l-4 border-indigo-600 -ml-4 pl-3'
+                    : 'text-gray-600 hover:text-gray-900'
+                  }`}
+              >
+                Milestones
+              </button>
+              <button
+                onClick={() => setActiveView('weeks')}
+                className={`block text-left py-2 font-medium ${activeView === 'weeks'
+                    ? 'text-gray-900 border-l-4 border-indigo-600 -ml-4 pl-3'
+                    : 'text-gray-600 hover:text-gray-900'
+                  }`}
+              >
+                Weeks
+              </button>
+            </div>
+          </div>
+
+          {/* Main content area */}
+          <div className="flex-grow">
+            {/* Milestones Section */}
+            {activeView === 'milestones' && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Milestones</h2>
+                <div className="space-y-4">
+                  {phaseMilestones.length > 0 ? (
+                    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                      {phaseMilestones.map(milestone => (
+                        <div key={milestone.id} className="mb-6 last:mb-0">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0 mt-1">
+                              <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
+                            </div>
+                            <div className="ml-4">
+                              <h3 className="text-lg font-medium text-gray-800">
+                                {milestone.title}
+                              </h3>
+                              {milestone.description && (
+                                <p className="text-gray-600 mt-1">{milestone.description}</p>
+                              )}
+
+                              {tasksByWeek[milestone.weekNumber || 0]?.length > 0 && (
+                                <div className="mt-3">
+                                  <p className="text-sm font-medium text-gray-700 mb-2">Tasks:</p>
+                                  <ul className="list-disc pl-5 space-y-1">
+                                    {tasksByWeek[milestone.weekNumber || 0]?.map(task => (
+                                      <li key={task.id} className="text-sm text-gray-600">
+                                        {task.title}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 bg-white rounded-lg shadow-sm border border-gray-200">
+                      <p className="text-gray-500">No milestones for this phase</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Weeks Section */}
+            {activeView === 'weeks' && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Weeks</h2>
+                <div className="space-y-4">
+                  {phaseWeeks.map(weekNumber => (
+                    <div key={weekNumber} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+                      {/* Week Header - Clickable to expand/collapse */}
+                      <div
+                        className="p-4 bg-white cursor-pointer flex justify-between items-center"
+                        onClick={() => toggleWeek(weekNumber)}
+                      >
+                        <h3 className="text-lg font-medium text-gray-800">
+                          Week {weekNumber}: {tasksByWeek[weekNumber][0]?.primaryFocus || 'Tasks'}
+                        </h3>
+                        <svg
+                          className={`w-5 h-5 text-gray-500 transform transition-transform ${expandedWeeks[weekNumber] ? 'rotate-180' : ''}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+
+                      {/* Week Content - Shown when expanded */}
+                      {expandedWeeks[weekNumber] && (
+                        <div className="p-4 border-t border-gray-200">
+                          <div className="mb-2">
+                            <h4 className="font-medium text-gray-700">Tasks:</h4>
+                          </div>
+                          <TaskList
+                            tasks={tasksByWeek[weekNumber]}
+                            title=""
+                            emptyMessage="No tasks for this week"
+                            itemsPerPage={10}
+                          />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
