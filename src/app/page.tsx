@@ -39,11 +39,11 @@ export default function Home() {
   // Get phase name based on phase number
   const getPhaseName = (phase: number): string => {
     const phaseNames: Record<number, string> = {
-      0: 'Foundation',
-      1: 'Development',
-      2: 'Testing',
-      3: 'Prelims',
-      4: 'Mains'
+      0: 'Foundation & CSAT Mastery',
+      1: 'Core Syllabus Coverage (Integrated GS & Optional Part 1)',
+      2: 'Mains Syllabus Completion & Consolidation',
+      3: 'Prelims Intensive (Revision & Mocks)',
+      4: 'Mains Exclusive (Answer Writing & Test Series)'
     };
     return phaseNames[phase] || `Phase ${phase}`;
   };
@@ -89,13 +89,13 @@ export default function Home() {
             <button
               key={phase}
               onClick={() => setSelectedPhase(phase)}
-              className={`px-6 py-4 rounded-lg text-center min-w-[180px] transition-colors ${selectedPhase === phase
+              className={`px-6 py-4 rounded-lg text-center min-w-[280px] transition-colors ${selectedPhase === phase
                 ? 'bg-gray-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
             >
               <div className="font-medium">Phase {phase}:</div>
-              <div className="font-semibold">{getPhaseName(phase)}</div>
+              <div className="font-semibold text-sm">{getPhaseName(phase)}</div>
             </button>
           ))}
         </div>
@@ -109,8 +109,8 @@ export default function Home() {
               <button
                 onClick={() => setActiveView('milestones')}
                 className={`block text-left py-2 font-medium ${activeView === 'milestones'
-                    ? 'text-gray-900 border-l-4 border-indigo-600 -ml-4 pl-3'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-gray-900 border-l-4 border-indigo-600 -ml-4 pl-3'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 Milestones
@@ -118,8 +118,8 @@ export default function Home() {
               <button
                 onClick={() => setActiveView('weeks')}
                 className={`block text-left py-2 font-medium ${activeView === 'weeks'
-                    ? 'text-gray-900 border-l-4 border-indigo-600 -ml-4 pl-3'
-                    : 'text-gray-600 hover:text-gray-900'
+                  ? 'text-gray-900 border-l-4 border-indigo-600 -ml-4 pl-3'
+                  : 'text-gray-600 hover:text-gray-900'
                   }`}
               >
                 Weeks
