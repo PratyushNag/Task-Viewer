@@ -2,11 +2,15 @@
   "name": "temp-project",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "postinstall": "next build"
   },
   "dependencies": {
     "@types/react-big-calendar": "^1.16.1",
