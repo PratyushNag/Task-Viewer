@@ -240,17 +240,17 @@ export default function WeekPage() {
   return (
     <div className="space-y-8">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Week View</h1>
+        <h1 className="text-3xl font-bold text-gunmetal">Week View</h1>
       </div>
 
       {/* Jump to section */}
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Jump to</h2>
+        <h2 className="text-xl font-semibold text-space-cadet mb-4">Jump to</h2>
         <div className="flex items-center">
           <select
             value={selectedWeek || weekNumber}
             onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
-            className="px-3 py-2 border rounded-md text-sm min-w-[200px]"
+            className="px-3 py-2 border border-space-cadet/30 rounded-md text-sm min-w-[200px] text-space-cadet"
           >
             {weekOptions.map(option => (
               <option key={option.value} value={option.value}>
@@ -260,7 +260,10 @@ export default function WeekPage() {
           </select>
           <button
             onClick={() => setSelectedWeek(parseInt(String(selectedWeek || weekNumber)))}
-            className="ml-2 px-4 py-2 bg-royal-purple text-white rounded-md hover:bg-space-cadet"
+            className="ml-2 px-4 py-2 text-white rounded-md"
+            style={{ backgroundColor: '#7E52A0' }}
+            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#29274C' }}
+            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#7E52A0' }}
           >
             Go
           </button>
@@ -269,17 +272,18 @@ export default function WeekPage() {
 
       {/* Week selection row */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Weeks</h2>
+        <h2 className="text-xl font-semibold text-space-cadet mb-4">Weeks</h2>
         <div className="relative">
           {/* Only show navigation buttons if there are multiple weeks */}
           {availableWeeks.length > 1 && (
             <button
               onClick={goToPreviousWeek}
-              className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md z-10"
+              className="absolute left-0 top-1/2 -translate-y-1/2 -ml-4 w-8 h-8 flex items-center justify-center rounded-full shadow-md z-10"
+              style={{ backgroundColor: '#C2AFF0' }}
               aria-label="Previous weeks"
               disabled={availableWeeks.indexOf(weekNumber) === 0}
             >
-              <span className={`${availableWeeks.indexOf(weekNumber) === 0 ? 'text-gray-300' : 'text-gray-600'}`}>&lt;</span>
+              <span className={`${availableWeeks.indexOf(weekNumber) === 0 ? 'text-space-cadet/30' : 'text-space-cadet'}`}>&lt;</span>
             </button>
           )}
 
@@ -295,10 +299,20 @@ export default function WeekPage() {
                     <React.Fragment key={week}>
                       <button
                         onClick={() => setSelectedWeek(week)}
-                        className={`px-4 py-3 rounded-lg text-center min-w-[80px] flex-shrink-0 transition-colors ${(selectedWeek || weekNumber) === week
-                          ? 'bg-royal-purple text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-royal-purple hover:text-white'
-                          }`}
+                        className={`px-4 py-3 rounded-lg text-center min-w-[80px] flex-shrink-0 transition-colors text-white`}
+                        style={{
+                          backgroundColor: (selectedWeek || weekNumber) === week ? '#7E52A0' : '#29274C'
+                        }}
+                        onMouseOver={(e) => {
+                          if ((selectedWeek || weekNumber) !== week) {
+                            e.currentTarget.style.backgroundColor = '#7E52A0';
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if ((selectedWeek || weekNumber) !== week) {
+                            e.currentTarget.style.backgroundColor = '#29274C';
+                          }
+                        }}
                       >
                         <div className="font-medium">Week</div>
                         <div className="font-semibold">{week}</div>
@@ -335,11 +349,12 @@ export default function WeekPage() {
           {availableWeeks.length > 1 && (
             <button
               onClick={goToNextWeek}
-              className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 w-8 h-8 flex items-center justify-center bg-white rounded-full shadow-md z-10"
+              className="absolute right-0 top-1/2 -translate-y-1/2 -mr-4 w-8 h-8 flex items-center justify-center rounded-full shadow-md z-10"
+              style={{ backgroundColor: '#C2AFF0' }}
               aria-label="Next weeks"
               disabled={availableWeeks.indexOf(weekNumber) === availableWeeks.length - 1}
             >
-              <span className={`${availableWeeks.indexOf(weekNumber) === availableWeeks.length - 1 ? 'text-gray-300' : 'text-gray-600'}`}>&gt;</span>
+              <span className={`${availableWeeks.indexOf(weekNumber) === availableWeeks.length - 1 ? 'text-space-cadet/30' : 'text-space-cadet'}`}>&gt;</span>
             </button>
           )}
         </div>
@@ -347,14 +362,17 @@ export default function WeekPage() {
 
       {/* Date range display */}
       <div className="flex justify-between items-center mb-6">
-        <p className="text-gray-600">{dateRange}</p>
+        <p className="text-space-cadet/70">{dateRange}</p>
 
         <button
           onClick={goToCurrentWeek}
-          className="px-4 py-2 bg-lilac hover:bg-royal-purple text-white rounded-md flex items-center"
+          className="px-4 py-2 text-white rounded-md flex items-center"
+          style={{ backgroundColor: '#D295BF' }}
+          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#7E52A0' }}
+          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#D295BF' }}
         >
           <span className="mr-2">Today</span>
-          <span className="text-xs bg-space-cadet text-white px-2 py-1 rounded-full">
+          <span className="text-xs text-white px-2 py-1 rounded-full" style={{ backgroundColor: '#29274C' }}>
             {getCurrentDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
           </span>
         </button>
@@ -364,22 +382,42 @@ export default function WeekPage() {
       <div className="flex">
         {/* Left sidebar with toggle buttons */}
         <div className="w-48 flex-shrink-0 mr-6">
-          <div className="border-l-4 border-gray-300 pl-4 space-y-6">
+          <div className="space-y-3">
             <button
               onClick={() => setActiveView('milestones')}
-              className={`block text-left py-2 font-medium ${activeView === 'milestones'
-                ? 'text-white border-l-4 border-lilac -ml-4 pl-3 bg-lilac'
-                : 'text-white hover:text-white bg-space-cadet hover:bg-lilac'
-                }`}
+              className={`block text-left py-2 px-4 font-medium rounded-md w-full text-white`}
+              style={{
+                backgroundColor: activeView === 'milestones' ? '#D295BF' : '#29274C'
+              }}
+              onMouseOver={(e) => {
+                if (activeView !== 'milestones') {
+                  e.currentTarget.style.backgroundColor = '#7E52A0';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (activeView !== 'milestones') {
+                  e.currentTarget.style.backgroundColor = '#29274C';
+                }
+              }}
             >
               Milestones
             </button>
             <button
               onClick={() => setActiveView('weeks')}
-              className={`block text-left py-2 font-medium ${activeView === 'weeks'
-                ? 'text-white border-l-4 border-lilac -ml-4 pl-3 bg-lilac'
-                : 'text-white hover:text-white bg-space-cadet hover:bg-lilac'
-                }`}
+              className={`block text-left py-2 px-4 font-medium rounded-md w-full text-white`}
+              style={{
+                backgroundColor: activeView === 'weeks' ? '#D295BF' : '#29274C'
+              }}
+              onMouseOver={(e) => {
+                if (activeView !== 'weeks') {
+                  e.currentTarget.style.backgroundColor = '#7E52A0';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (activeView !== 'weeks') {
+                  e.currentTarget.style.backgroundColor = '#29274C';
+                }
+              }}
             >
               Weeks
             </button>
@@ -393,19 +431,20 @@ export default function WeekPage() {
             <div>
               {weekMilestones.length > 0 ? (
                 weekMilestones.map(milestone => (
-                  <div key={milestone.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
-                    <h3 className="text-lg font-medium text-gray-800 mb-2">
+                  <div key={milestone.id} className="rounded-lg shadow-sm border border-space-cadet/30 p-6 mb-4" style={{ backgroundColor: '#C2AFF0' }}>
+                    <h3 className="text-lg font-medium text-space-cadet mb-2">
                       Milestone {milestone.weekNumber}: {milestone.title.split(':')[1]?.trim() || milestone.title}
                     </h3>
                     {milestone.description && (
-                      <p className="text-gray-600 mb-4">{milestone.description}</p>
+                      <p className="text-space-cadet/80 mb-4">{milestone.description}</p>
                     )}
 
                     <div className="mt-3">
-                      <p className="text-sm font-medium text-gray-700 mb-2">Tasks:</p>
-                      <ul className="list-disc pl-5 space-y-1">
+                      <p className="text-sm font-medium text-space-cadet mb-2">Tasks:</p>
+                      <ul className="pl-5 space-y-1">
                         {weekTasks.filter(task => task.weekNumber === milestone.weekNumber).map(task => (
-                          <li key={task.id} className="text-sm text-gray-600">
+                          <li key={task.id} className="text-sm text-space-cadet/80 flex items-start">
+                            <div className="w-2 h-2 rounded-full mt-1.5 -ml-3 mr-2" style={{ backgroundColor: '#29274C' }}></div>
                             Task {task.title.split(':')[0].trim()}: {task.title.split(':')[1]?.trim() || task.title}
                           </li>
                         ))}
@@ -414,8 +453,8 @@ export default function WeekPage() {
                   </div>
                 ))
               ) : (
-                <div className="text-center py-6 bg-white rounded-lg shadow-sm border border-gray-200">
-                  <p className="text-gray-500">No milestones for Week {weekNumber}</p>
+                <div className="text-center py-6 rounded-lg shadow-sm border border-space-cadet/30" style={{ backgroundColor: '#C2AFF0' }}>
+                  <p className="text-space-cadet/70">No milestones for Week {weekNumber}</p>
                 </div>
               )}
             </div>
@@ -426,19 +465,20 @@ export default function WeekPage() {
             <div className="space-y-4">
               {Object.keys(tasksByDay).length > 0 ? (
                 Object.entries(tasksByDay).map(([day, dayTasks]) => (
-                  <div key={day} className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200">
+                  <div key={day} className="rounded-lg shadow-md overflow-hidden border border-space-cadet/30" style={{ backgroundColor: '#C2AFF0' }}>
                     {/* Day Header - Clickable to expand/collapse */}
                     <div
-                      className="p-4 bg-white cursor-pointer flex justify-between items-center"
+                      className="p-4 cursor-pointer flex justify-between items-center"
                       onClick={() => toggleDay(day)}
+                      style={{ backgroundColor: '#C2AFF0' }}
                     >
-                      <h3 className="text-lg font-medium text-gray-800">
+                      <h3 className="text-lg font-medium text-space-cadet">
                         {day}
                       </h3>
                       <div className="flex items-center">
-                        <span className="text-sm text-gray-500 mr-2">{dayTasks.length} task{dayTasks.length !== 1 ? 's' : ''}</span>
+                        <span className="text-sm text-space-cadet/70 mr-2">{dayTasks.length} task{dayTasks.length !== 1 ? 's' : ''}</span>
                         <svg
-                          className={`w-5 h-5 text-gray-500 transform transition-transform ${expandedDays[day] ? 'rotate-180' : ''}`}
+                          className={`w-5 h-5 text-space-cadet/70 transform transition-transform ${expandedDays[day] ? 'rotate-180' : ''}`}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -450,7 +490,7 @@ export default function WeekPage() {
 
                     {/* Day Content - Shown when expanded */}
                     {expandedDays[day] && (
-                      <div className="p-4 border-t border-gray-200">
+                      <div className="p-4 border-t border-space-cadet/30" style={{ backgroundColor: '#C2AFF0' }}>
                         <TaskList
                           tasks={dayTasks}
                           title=""
@@ -462,8 +502,8 @@ export default function WeekPage() {
                   </div>
                 ))
               ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 text-center">
-                  <p className="text-gray-500">No tasks scheduled for Week {weekNumber}</p>
+                <div className="rounded-lg shadow-sm border border-space-cadet/30 p-6 text-center" style={{ backgroundColor: '#C2AFF0' }}>
+                  <p className="text-space-cadet/70">No tasks scheduled for Week {weekNumber}</p>
                 </div>
               )}
             </div>

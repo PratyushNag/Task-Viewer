@@ -24,16 +24,16 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit }) => {
   };
 
   const priorityClasses = {
-    low: 'bg-blue-100 text-blue-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    high: 'bg-red-100 text-red-800',
+    low: 'bg-lilac/30 text-space-cadet',
+    medium: 'bg-royal-purple/30 text-space-cadet',
+    high: 'bg-space-cadet/30 text-space-cadet',
   };
 
   const isOverdue = !task.completed && isPast(task.dueDate);
 
   return (
-    <div className={`p-4 mb-3 bg-white rounded-lg shadow-sm border ${isOverdue ? 'border-red-300' : 'border-gray-200'
-      }`}>
+    <div className={`p-4 mb-3 rounded-lg shadow-sm border ${isOverdue ? 'border-red-300' : 'border-space-cadet/30'
+      }`} style={{ backgroundColor: '#C2AFF0' }}>
       <div className="flex items-start justify-between">
         <div className="flex items-start space-x-3">
           <div className="pt-1">
@@ -41,16 +41,16 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit }) => {
               type="checkbox"
               checked={task.completed}
               onChange={handleToggle}
-              className="h-5 w-5 text-indigo-600 rounded focus:ring-indigo-500"
+              className="h-5 w-5 text-royal-purple rounded focus:ring-royal-purple"
             />
           </div>
           <div>
-            <h3 className={`text-lg font-medium ${task.completed ? 'line-through text-gray-500' : 'text-gray-900'
+            <h3 className={`text-lg font-medium ${task.completed ? 'line-through text-gray-500' : 'text-space-cadet'
               }`}>
               {task.title}
             </h3>
             {task.description && (
-              <p className={`mt-1 text-sm ${task.completed ? 'text-gray-400' : 'text-gray-600'
+              <p className={`mt-1 text-sm ${task.completed ? 'text-gray-400' : 'text-space-cadet/80'
                 }`}>
                 {task.description}
               </p>
@@ -62,11 +62,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit }) => {
               </span>
               <div className="flex flex-col">
                 {task.startDate && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-space-cadet/70">
                     Start: {formatDate(task.startDate)}
                   </span>
                 )}
-                <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-500'
+                <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-space-cadet/70'
                   }`}>
                   {isOverdue ? 'Overdue: ' : 'Due: '}
                   {formatDate(task.dueDate)}
@@ -78,7 +78,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit }) => {
         <div className="flex space-x-2">
           <button
             onClick={onEdit}
-            className="text-gray-400 hover:text-gray-500"
+            className="text-space-cadet/60 hover:text-royal-purple"
             aria-label="Edit task"
           >
             <svg
@@ -98,7 +98,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onEdit }) => {
           </button>
           <button
             onClick={handleDelete}
-            className="text-gray-400 hover:text-red-500"
+            className="text-space-cadet/60 hover:text-red-500"
             aria-label="Delete task"
           >
             <svg
