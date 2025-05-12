@@ -66,10 +66,11 @@ const TaskList: React.FC<TaskListProps> = ({
       ) : (
         <>
           <div className="space-y-4">
-            {currentTasks.map((task) => (
+            {currentTasks.map((task, index) => (
               <TaskItem
                 key={task.id}
                 task={task}
+                index={index}
                 onEdit={() => handleEdit(task)}
               />
             ))}

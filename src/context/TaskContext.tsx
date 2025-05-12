@@ -2,8 +2,6 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Task } from '@/types';
-import { loadTasks, saveTasks, isStorageAvailable } from '@/utils/storageUtils';
-import { loadTasksFromJson } from '@/utils/dataLoader';
 import { generateId } from '@/utils/idUtils';
 
 // Define the state type
@@ -20,7 +18,8 @@ type TaskAction =
   | { type: 'ADD_TASK'; payload: Omit<Task, 'id' | 'createdAt' | 'updatedAt'> }
   | { type: 'UPDATE_TASK'; payload: Task }
   | { type: 'DELETE_TASK'; payload: string }
-  | { type: 'TOGGLE_TASK_COMPLETION'; payload: string };
+  | { type: 'TOGGLE_TASK_COMPLETION'; payload: string }
+  | { type: 'MOVE_TASK'; payload: { taskId: string; newStartDate: string; newDueDate: string; newWeekNumber: number } };
 
 // Define the context type
 interface TaskContextType {
@@ -29,6 +28,7 @@ interface TaskContextType {
   updateTask: (task: Task) => void;
   deleteTask: (id: string) => void;
   toggleTaskCompletion: (id: string) => void;
+  moveTask: (taskId: string, newStartDate: string, newDueDate: string, newWeekNumber: number) => void;
 }
 
 // Create the context
@@ -100,6 +100,23 @@ const taskReducer = (state: TaskState, action: TaskAction): TaskState => {
         ),
       };
     }
+    case 'MOVE_TASK': {
+      const { taskId, newStartDate, newDueDate, newWeekNumber } = action.payload;
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === taskId
+            ? {
+              ...task,
+              startDate: newStartDate,
+              dueDate: newDueDate,
+              weekNumber: newWeekNumber,
+              updatedAt: new Date().toISOString(),
+            }
+            : task
+        ),
+      };
+    }
     default:
       return state;
   }
@@ -109,62 +126,175 @@ const taskReducer = (state: TaskState, action: TaskAction): TaskState => {
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(taskReducer, initialState);
 
-  // Load tasks from localStorage or JSON on initial render
+  // Load tasks from MongoDB API on initial render
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    const fetchTasks = async () => {
       try {
-        // First try to load from localStorage if available
-        if (isStorageAvailable()) {
-          const storedTasks = loadTasks();
-          if (storedTasks && storedTasks.length > 0) {
-            dispatch({ type: 'LOAD_TASKS_SUCCESS', payload: storedTasks });
-            return;
-          }
+        const response = await fetch('/api/tasks');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch tasks');
         }
 
-        // If no tasks in localStorage or localStorage not available, load from JSON
-        const jsonTasks = loadTasksFromJson();
-        dispatch({ type: 'LOAD_TASKS_SUCCESS', payload: jsonTasks });
+        const data = await response.json();
+        dispatch({ type: 'LOAD_TASKS_SUCCESS', payload: data });
       } catch (error) {
+        console.error('Error loading tasks:', error);
         dispatch({
           type: 'LOAD_TASKS_ERROR',
           payload: 'Failed to load tasks',
         });
       }
-    } else {
-      dispatch({
-        type: 'LOAD_TASKS_ERROR',
-        payload: 'Window is not available',
-      });
-    }
+    };
+
+    fetchTasks();
   }, []);
 
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      isStorageAvailable() &&
-      !state.loading
-    ) {
-      saveTasks(state.tasks);
-    }
-  }, [state.tasks, state.loading]);
-
   // Context actions
-  const addTask = (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
-    dispatch({ type: 'ADD_TASK', payload: task });
+  const addTask = async (task: Omit<Task, 'id' | 'createdAt' | 'updatedAt'>) => {
+    try {
+      const newTask = {
+        ...task,
+        id: generateId(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const response = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newTask),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add task');
+      }
+
+      const savedTask = await response.json();
+      dispatch({ type: 'ADD_TASK', payload: task });
+    } catch (error) {
+      console.error('Error adding task:', error);
+    }
   };
 
-  const updateTask = (task: Task) => {
-    dispatch({ type: 'UPDATE_TASK', payload: task });
+  const updateTask = async (task: Task) => {
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ...task,
+          updatedAt: new Date().toISOString(),
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update task');
+      }
+
+      dispatch({ type: 'UPDATE_TASK', payload: task });
+    } catch (error) {
+      console.error('Error updating task:', error);
+    }
   };
 
-  const deleteTask = (id: string) => {
-    dispatch({ type: 'DELETE_TASK', payload: id });
+  const deleteTask = async (id: string) => {
+    try {
+      const response = await fetch(`/api/tasks/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete task');
+      }
+
+      dispatch({ type: 'DELETE_TASK', payload: id });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+    }
   };
 
-  const toggleTaskCompletion = (id: string) => {
-    dispatch({ type: 'TOGGLE_TASK_COMPLETION', payload: id });
+  const toggleTaskCompletion = async (id: string) => {
+    try {
+      // Find the task to toggle
+      const task = state.tasks.find((t) => t.id === id);
+
+      if (!task) {
+        throw new Error('Task not found');
+      }
+
+      // Update the task with toggled completion
+      const updatedTask = {
+        ...task,
+        completed: !task.completed,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const response = await fetch(`/api/tasks/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedTask),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle task completion');
+      }
+
+      dispatch({ type: 'TOGGLE_TASK_COMPLETION', payload: id });
+    } catch (error) {
+      console.error('Error toggling task completion:', error);
+    }
+  };
+
+  // Move task to a new date and week
+  const moveTask = async (
+    taskId: string,
+    newStartDate: string,
+    newDueDate: string,
+    newWeekNumber: number
+  ) => {
+    try {
+      // Find the task to move
+      const task = state.tasks.find((t) => t.id === taskId);
+
+      if (!task) {
+        throw new Error('Task not found');
+      }
+
+      // Update the task with new dates and week number
+      const updatedTask = {
+        ...task,
+        startDate: newStartDate,
+        dueDate: newDueDate,
+        weekNumber: newWeekNumber,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedTask),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to move task');
+      }
+
+      dispatch({
+        type: 'MOVE_TASK',
+        payload: { taskId, newStartDate, newDueDate, newWeekNumber },
+      });
+    } catch (error) {
+      console.error('Error moving task:', error);
+    }
   };
 
   return (
@@ -175,6 +305,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updateTask,
         deleteTask,
         toggleTaskCompletion,
+        moveTask,
       }}
     >
       {children}

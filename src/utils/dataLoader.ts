@@ -1,44 +1,62 @@
 /**
- * Utility functions for loading data from JSON files
+ * Utility functions for loading data from MongoDB API
  */
 import { Task, Milestone } from '@/types';
-import studyPlanTasksData from '@/data/study_plan_tasks.json';
-import studyPlanMilestonesData from '@/data/study_plan_milestones.json';
 
 /**
- * Load tasks from JSON file
+ * Load tasks from MongoDB API
  */
-export const loadTasksFromJson = (): Task[] => {
+export const loadTasksFromApi = async (): Promise<Task[]> => {
   try {
-    // Use study plan tasks instead of the regular tasks
-    return studyPlanTasksData.map((task: any) => ({
-      ...task,
-      dueDate: task.dueDate,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt
-    }));
+    const response = await fetch('/api/tasks');
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch tasks');
+    }
+
+    const tasks = await response.json();
+    return tasks;
   } catch (error) {
-    console.error('Error loading tasks from JSON:', error);
+    console.error('Error loading tasks from API:', error);
     return [];
   }
 };
 
 /**
- * Load milestones from JSON file
+ * Load milestones from MongoDB API
  */
-export const loadMilestonesFromJson = (): Milestone[] => {
+export const loadMilestonesFromApi = async (): Promise<Milestone[]> => {
   try {
-    // Use study plan milestones instead of the regular milestones
-    return studyPlanMilestonesData.map((milestone: any) => ({
-      ...milestone,
-      dueDate: milestone.dueDate,
-      createdAt: milestone.createdAt,
-      updatedAt: milestone.updatedAt
-    }));
+    const response = await fetch('/api/milestones');
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch milestones');
+    }
+
+    const milestones = await response.json();
+    return milestones;
   } catch (error) {
-    console.error('Error loading milestones from JSON:', error);
+    console.error('Error loading milestones from API:', error);
     return [];
   }
+};
+
+/**
+ * Load tasks from JSON file (legacy)
+ * This is kept for backward compatibility
+ */
+export const loadTasksFromJson = (): Task[] => {
+  console.warn('loadTasksFromJson is deprecated. Use loadTasksFromApi instead.');
+  return [];
+};
+
+/**
+ * Load milestones from JSON file (legacy)
+ * This is kept for backward compatibility
+ */
+export const loadMilestonesFromJson = (): Milestone[] => {
+  console.warn('loadMilestonesFromJson is deprecated. Use loadMilestonesFromApi instead.');
+  return [];
 };
 
 /**
@@ -135,19 +153,19 @@ export const getDateRangeForWeek = (
 };
 
 /**
- * Load study plan tasks from JSON file
- * This is now an alias for loadTasksFromJson for backward compatibility
+ * Load study plan tasks from MongoDB API
+ * This is now an alias for loadTasksFromApi for backward compatibility
  */
-export const loadStudyPlanTasks = (): Task[] => {
-  return loadTasksFromJson();
+export const loadStudyPlanTasks = async (): Promise<Task[]> => {
+  return loadTasksFromApi();
 };
 
 /**
- * Load study plan milestones from JSON file
- * This is now an alias for loadMilestonesFromJson for backward compatibility
+ * Load study plan milestones from MongoDB API
+ * This is now an alias for loadMilestonesFromApi for backward compatibility
  */
-export const loadStudyPlanMilestones = (): Milestone[] => {
-  return loadMilestonesFromJson();
+export const loadStudyPlanMilestones = async (): Promise<Milestone[]> => {
+  return loadMilestonesFromApi();
 };
 
 /**

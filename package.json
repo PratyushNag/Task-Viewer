@@ -10,13 +10,17 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "next build"
+    "postinstall": "next build",
+    "migrate": "node scripts/migrate-to-mongodb.js"
   },
   "dependencies": {
     "@types/react-big-calendar": "^1.16.1",
     "date-fns": "^4.1.0",
+    "mongodb": "^6.16.0",
+    "mongoose": "^8.14.2",
     "next": "15.3.2",
     "react": "^19.0.0",
+    "react-beautiful-dnd": "^13.1.1",
     "react-big-calendar": "^1.18.0",
     "react-dom": "^19.0.0"
   },
@@ -25,10 +29,12 @@
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
+    "@types/react-beautiful-dnd": "^13.1.8",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "tailwindcss": "^4",
+    "ts-node": "^10.9.2",
     "typescript": "^5"
   }
 }

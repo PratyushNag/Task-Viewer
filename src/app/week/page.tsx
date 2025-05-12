@@ -4,7 +4,13 @@ import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { useTaskContext, useMilestoneContext } from '@/context';
 import { isInWeek, getCurrentDate } from '@/utils/dateUtils';
 import TaskList from '@/components/tasks/TaskList';
+import DailyTaskList from '@/components/tasks/DailyTaskList';
+import TaskItem from '@/components/tasks/TaskItem';
+import TaskForm from '@/components/tasks/TaskForm';
 import { getMilestonesForWeek, getAllWeekNumbers } from '@/utils/dataLoader';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import { addDays, format, parseISO } from 'date-fns';
+import { Task } from '@/types';
 
 // Helper function to calculate week info (moved outside component to avoid Hook issues)
 // Using May 12, 2025 (Monday) as the reference point for Week 1
@@ -54,11 +60,12 @@ const calculateWeekInfo = (weekNum?: number) => {
 
 export default function WeekPage() {
   // Context and state
-  const { state: { tasks, loading: tasksLoading } } = useTaskContext();
+  const { state: { tasks, loading: tasksLoading }, moveTask, toggleTaskCompletion } = useTaskContext();
   const { state: { milestones, loading: milestonesLoading } } = useMilestoneContext();
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [activeView, setActiveView] = useState<'milestones' | 'weeks'>('weeks');
-  const [expandedDays, setExpandedDays] = useState<Record<string, boolean>>({});
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   // Memoize the getWeekInfo function
   const getWeekInfo = useCallback((weekNum?: number) => {
@@ -116,11 +123,28 @@ export default function WeekPage() {
     }));
   };
 
+  // Get the days of the week for the selected week
+  const weekDays = useMemo(() => {
+    const { startOfWeek } = weekInfo;
+    const days = [];
+
+    for (let i = 0; i < 7; i++) {
+      const day = addDays(startOfWeek, i);
+      days.push(day);
+    }
+
+    return days;
+  }, [weekInfo]);
+
   // Group tasks by day of the week
   const tasksByDay = useMemo(() => {
-    // Start with Monday as the first day of the week for ordering purposes
-    const dayOrder = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const grouped: Record<string, typeof tasks> = {};
+
+    // Initialize all days of the week
+    weekDays.forEach(day => {
+      const dayKey = format(day, 'yyyy-MM-dd');
+      grouped[dayKey] = [];
+    });
 
     // Group tasks by day
     weekTasks.forEach(task => {
@@ -168,28 +192,29 @@ export default function WeekPage() {
         displayDate = new Date(task.dueDate);
       }
 
-      // Get the day name and add the task to that day's group
-      // Convert from JS day (0=Sunday) to our day array (0=Monday)
-      const jsDay = displayDate.getDay(); // 0=Sunday, 1=Monday, etc.
-      const dayIndex = jsDay === 0 ? 6 : jsDay - 1; // Convert to 0=Monday, 1=Tuesday, etc.
-      const dayName = dayOrder[dayIndex];
-
-      // Initialize the day array if it doesn't exist yet
-      if (!grouped[dayName]) {
-        grouped[dayName] = [];
-      }
+      // Format the date as YYYY-MM-DD for grouping
+      const dayKey = format(displayDate, 'yyyy-MM-dd');
 
       // Add the task to the appropriate day
-      grouped[dayName].push(task);
+      if (grouped[dayKey]) {
+        grouped[dayKey].push(task);
+      } else {
+        // If the day is not in the current week, add it to the closest day
+        const dayOfWeek = displayDate.getDay();
+        const adjustedDayIndex = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Convert to 0=Monday
+        const closestDay = weekDays[adjustedDayIndex];
+        const closestDayKey = format(closestDay, 'yyyy-MM-dd');
+
+        if (!grouped[closestDayKey]) {
+          grouped[closestDayKey] = [];
+        }
+
+        grouped[closestDayKey].push(task);
+      }
     });
 
-    // Sort the days according to dayOrder and return
-    return Object.fromEntries(
-      Object.entries(grouped).sort(([a], [b]) => {
-        return dayOrder.indexOf(a) - dayOrder.indexOf(b);
-      })
-    );
-  }, [weekTasks]);
+    return grouped;
+  }, [weekTasks, weekDays]);
 
   // Navigation handlers
   const goToPreviousWeek = useCallback(() => {
@@ -215,17 +240,94 @@ export default function WeekPage() {
     return getMilestonesForWeek(weekNumber, milestones);
   }, [weekNumber, milestones]);
 
-  // Auto-expand the first day when week changes
-  useEffect(() => {
-    // Reset expanded days when week changes
-    setExpandedDays({});
+  // Handle task movement between days
+  const handleTaskMoved = useCallback((result: DropResult) => {
+    // If there's no destination or the drag was cancelled, return early
+    if (!result.destination) return;
 
-    // If there are tasks for this week, expand the first day
-    if (Object.keys(tasksByDay).length > 0) {
-      const firstDay = Object.keys(tasksByDay)[0];
-      setExpandedDays({ [firstDay]: true });
+    const { draggableId, source, destination } = result;
+
+    // If the task was dropped in the same day, do nothing
+    if (source.droppableId === destination.droppableId) return;
+
+    console.log('Drag result:', result);
+
+    // Get the task that was moved
+    const task = weekTasks.find(t => t.id === draggableId);
+    if (!task) {
+      console.error('Task not found:', draggableId);
+      return;
     }
-  }, [weekNumber, tasksByDay]);
+
+    try {
+      // Extract the source and destination dates from the droppable IDs
+      // Format: day-YYYY-MM-DD
+      const destDateStr = destination.droppableId.split('day-')[1];
+
+      if (!destDateStr) {
+        console.error('Invalid destination droppable ID:', destination.droppableId);
+        return;
+      }
+
+      console.log('Destination date string:', destDateStr);
+
+      // Parse the destination date
+      const destDate = parseISO(destDateStr);
+
+      if (isNaN(destDate.getTime())) {
+        console.error('Invalid date parsed:', destDateStr);
+        return;
+      }
+
+      console.log('Parsed destination date:', destDate);
+
+      // Calculate new dates
+      const newStartDate = format(destDate, 'yyyy-MM-dd');
+      console.log('New start date:', newStartDate);
+
+      // If the task has a due date that's the same as the start date,
+      // update the due date as well
+      let newDueDate = task.dueDate;
+      if (typeof task.startDate === 'string' && typeof task.dueDate === 'string') {
+        const startDate = new Date(task.startDate);
+        const dueDate = new Date(task.dueDate);
+
+        // Calculate the difference in days between start and due date
+        const diffDays = Math.round((dueDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Apply the same difference to the new due date
+        const newDueDateObj = new Date(destDate);
+        newDueDateObj.setDate(newDueDateObj.getDate() + diffDays);
+        newDueDate = format(newDueDateObj, 'yyyy-MM-dd');
+      } else {
+        newDueDate = newStartDate;
+      }
+
+      console.log('New due date:', newDueDate);
+
+      // Move the task
+      moveTask(
+        draggableId,
+        newStartDate,
+        newDueDate,
+        weekNumber
+      );
+    } catch (error) {
+      console.error('Error in handleTaskMoved:', error);
+    }
+  }, [weekTasks, weekNumber, moveTask]);
+
+  // Handle task editing
+  const handleEdit = useCallback((task: Task) => {
+    setEditingTask(task);
+    setIsFormOpen(true);
+  }, []);
+
+  // Handle closing the task form
+  const handleCloseForm = useCallback(() => {
+    setEditingTask(null);
+    setIsFormOpen(false);
+  }, []);
 
   // Loading state
   if (tasksLoading || milestonesLoading) {
@@ -463,53 +565,121 @@ export default function WeekPage() {
           {/* Weekly Tasks View */}
           {activeView === 'weeks' && (
             <div className="space-y-4">
-              {Object.keys(tasksByDay).length > 0 ? (
-                Object.entries(tasksByDay).map(([day, dayTasks]) => (
-                  <div key={day} className="rounded-lg shadow-md overflow-hidden border border-space-cadet/30" style={{ backgroundColor: '#C2AFF0' }}>
-                    {/* Day Header - Clickable to expand/collapse */}
-                    <div
-                      className="p-4 cursor-pointer flex justify-between items-center"
-                      onClick={() => toggleDay(day)}
-                      style={{ backgroundColor: '#C2AFF0' }}
-                    >
-                      <h3 className="text-lg font-medium text-space-cadet">
-                        {day}
-                      </h3>
-                      <div className="flex items-center">
-                        <span className="text-sm text-space-cadet/70 mr-2">{dayTasks.length} task{dayTasks.length !== 1 ? 's' : ''}</span>
-                        <svg
-                          className={`w-5 h-5 text-space-cadet/70 transform transition-transform ${expandedDays[day] ? 'rotate-180' : ''}`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-                    </div>
+              <DragDropContext onDragEnd={handleTaskMoved}>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr>
+                        <th className="w-32 py-3 px-4 text-left bg-space-cadet text-white rounded-tl-lg">Day</th>
+                        <th className="py-3 px-4 text-left bg-space-cadet text-white rounded-tr-lg">Tasks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {weekDays.map((day, index) => {
+                        const dayKey = format(day, 'yyyy-MM-dd');
+                        const dayTasks = tasksByDay[dayKey] || [];
+                        const dayName = format(day, 'EEEE');
+                        const dayDate = format(day, 'MMM d');
+                        const isLastDay = index === weekDays.length - 1;
 
-                    {/* Day Content - Shown when expanded */}
-                    {expandedDays[day] && (
-                      <div className="p-4 border-t border-space-cadet/30" style={{ backgroundColor: '#C2AFF0' }}>
-                        <TaskList
-                          tasks={dayTasks}
-                          title=""
-                          emptyMessage={`No tasks for ${day}`}
-                          itemsPerPage={10}
-                        />
-                      </div>
-                    )}
-                  </div>
-                ))
-              ) : (
+                        return (
+                          <tr key={dayKey} className={`border-b ${isLastDay ? 'border-b-0' : 'border-space-cadet/20'}`}>
+                            <td className="py-3 px-4 bg-space-cadet text-white">
+                              <div className="font-medium">{dayName}</div>
+                              <div className="text-sm text-white/80">{dayDate}</div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <Droppable droppableId={`day-${dayKey}`} direction="horizontal">
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.droppableProps}
+                                    className={`flex flex-wrap gap-3 min-h-[80px] p-3 rounded-md ${snapshot.isDraggingOver ? 'bg-royal-purple/10' : ''}`}
+                                    style={{ minWidth: '500px' }}
+                                  >
+                                    {dayTasks.length === 0 ? (
+                                      <p className="text-space-cadet/50 py-2 text-sm">
+                                        No tasks for this day
+                                      </p>
+                                    ) : (
+                                      dayTasks.map((task, index) => (
+                                        <Draggable key={task.id} draggableId={task.id} index={index}>
+                                          {(provided, snapshot) => (
+                                            <div
+                                              ref={provided.innerRef}
+                                              {...provided.draggableProps}
+                                              {...provided.dragHandleProps}
+                                              className={`p-3 rounded-lg shadow-sm border ${task.completed ? 'border-green-300' : 'border-space-cadet/30'} ${snapshot.isDragging ? 'opacity-75 shadow-lg' : ''}`}
+                                              style={{
+                                                backgroundColor: '#C2AFF0',
+                                                width: '220px',
+                                                ...provided.draggableProps.style
+                                              }}
+                                            >
+                                              <div className="flex items-start justify-between">
+                                                <div className="flex items-start space-x-2">
+                                                  <input
+                                                    type="checkbox"
+                                                    checked={task.completed}
+                                                    onChange={() => toggleTaskCompletion(task.id)}
+                                                    className="h-4 w-4 mt-1 text-royal-purple rounded focus:ring-royal-purple"
+                                                  />
+                                                  <div>
+                                                    <h3 className={`text-sm font-medium ${task.completed ? 'line-through text-gray-500' : 'text-space-cadet'}`}>
+                                                      {task.title}
+                                                    </h3>
+                                                    <div className="mt-1 flex items-center space-x-1">
+                                                      <span className="text-xs text-space-cadet/70">
+                                                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                </div>
+                                                <button
+                                                  onClick={() => handleEdit(task)}
+                                                  className="text-space-cadet/60 hover:text-royal-purple ml-1"
+                                                  aria-label="Edit task"
+                                                >
+                                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                  </svg>
+                                                </button>
+                                              </div>
+                                            </div>
+                                          )}
+                                        </Draggable>
+                                      ))
+                                    )}
+                                    {provided.placeholder}
+                                  </div>
+                                )}
+                              </Droppable>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </DragDropContext>
+
+              {Object.values(tasksByDay).every(tasks => tasks.length === 0) && (
                 <div className="rounded-lg shadow-sm border border-space-cadet/30 p-6 text-center" style={{ backgroundColor: '#C2AFF0' }}>
                   <p className="text-space-cadet/70">No tasks scheduled for Week {weekNumber}</p>
                 </div>
+              )}
+
+              {/* Task Edit Form */}
+              {isFormOpen && (
+                <TaskForm
+                  task={editingTask}
+                  onClose={handleCloseForm}
+                />
               )}
             </div>
           )}
         </div>
       </div>
-    </div>
+    </div >
   );
 }

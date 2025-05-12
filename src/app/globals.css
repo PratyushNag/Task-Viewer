@@ -31,3 +31,22 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Drag and Drop Styles */
+.task-item {
+  transition: background-color 0.2s, box-shadow 0.2s;
+}
+
+.task-item.is-dragging {
+  background-color: rgba(126, 82, 160, 0.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.droppable-container {
+  min-height: 50px;
+  transition: background-color 0.2s;
+}
+
+.droppable-container.is-over {
+  background-color: rgba(210, 149, 191, 0.2);
+}
