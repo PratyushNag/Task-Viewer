@@ -260,12 +260,16 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     newWeekNumber: number
   ) => {
     try {
+      console.log('Moving task:', { taskId, newStartDate, newDueDate, newWeekNumber });
+
       // Find the task to move
       const task = state.tasks.find((t) => t.id === taskId);
 
       if (!task) {
         throw new Error('Task not found');
       }
+
+      console.log('Original task:', task);
 
       // Update the task with new dates and week number
       const updatedTask = {
@@ -276,6 +280,8 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updatedAt: new Date().toISOString(),
       };
 
+      console.log('Updated task to be sent to API:', updatedTask);
+
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: 'PUT',
         headers: {
@@ -285,13 +291,26 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       });
 
       if (!response.ok) {
-        throw new Error('Failed to move task');
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`Failed to move task: ${response.status} ${errorText}`);
       }
+
+      const responseData = await response.json();
+      console.log('API response after moving task:', responseData);
 
       dispatch({
         type: 'MOVE_TASK',
         payload: { taskId, newStartDate, newDueDate, newWeekNumber },
       });
+
+      // Log the updated state after dispatch
+      setTimeout(() => {
+        const updatedTask = state.tasks.find((t) => t.id === taskId);
+        console.log('Updated task in state after dispatch:', updatedTask);
+      }, 0);
+
+      console.log('Task successfully moved in state and database');
     } catch (error) {
       console.error('Error moving task:', error);
     }

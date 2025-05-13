@@ -125,13 +125,13 @@ export const isPast = (date: Date | string): boolean => {
 };
 
 /**
- * Get the current date (for testing purposes)
- * This allows us to simulate a specific date for testing
+ * Get the current date
+ * Previously used a hardcoded date (May 11, 2025) for testing purposes
+ * Now returns the actual current date
  */
 export const getCurrentDate = (): Date => {
-  // For testing, we're using May 11, 2025 as "today"
-  // In a production environment, this would return new Date()
-  return new Date(2025, 4, 11); // Month is 0-indexed, so 4 = May
+  // Return the actual current date
+  return new Date();
 };
 
 /**

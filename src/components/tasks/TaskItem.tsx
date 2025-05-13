@@ -4,7 +4,7 @@ import React from 'react';
 import { Task } from '@/types';
 import { formatDate, isPast } from '@/utils/dateUtils';
 import { useTaskContext } from '@/context';
-import { Draggable } from 'react-beautiful-dnd';
+import { StrictDraggable } from '@/components/dnd/DragDropWrapper';
 
 interface TaskItemProps {
   task: Task;
@@ -34,7 +34,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
   const isOverdue = !task.completed && isPast(task.dueDate);
 
   return (
-    <Draggable draggableId={task.id} index={index}>
+    <StrictDraggable draggableId={task.id} index={index}>
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
@@ -133,7 +133,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
           </div>
         </div>
       )}
-    </Draggable>
+    </StrictDraggable>
   );
 };
 

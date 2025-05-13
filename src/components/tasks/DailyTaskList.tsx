@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Task } from '@/types';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
-import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
+import { StrictDragDropContext, StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
 import { format } from 'date-fns';
 
 interface DailyTaskListProps {
@@ -50,8 +50,8 @@ const DailyTaskList: React.FC<DailyTaskListProps> = ({
         <p className="text-sm text-white/80">{dayDate}</p>
       </div>
 
-      <DragDropContext onDragEnd={handleDragEnd}>
-        <Droppable droppableId={droppableId} isDropDisabled={false} isCombineEnabled={false}>
+      <StrictDragDropContext onDragEnd={handleDragEnd}>
+        <StrictDroppable droppableId={droppableId} isDropDisabled={false}>
           {(provided, snapshot) => (
             <div
               ref={provided.innerRef}
@@ -78,8 +78,8 @@ const DailyTaskList: React.FC<DailyTaskListProps> = ({
               {provided.placeholder}
             </div>
           )}
-        </Droppable>
-      </DragDropContext>
+        </StrictDroppable>
+      </StrictDragDropContext>
 
       {isFormOpen && (
         <TaskForm

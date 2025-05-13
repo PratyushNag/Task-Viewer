@@ -9,9 +9,10 @@ describe('dateUtils', () => {
     global.Date = class extends Date {
       constructor(date?: string | number | Date) {
         if (date) {
-          return new originalDate(date);
+          super(new originalDate(date).getTime());
+        } else {
+          super(mockDate.getTime());
         }
-        return new originalDate(mockDate);
       }
       static now() {
         return mockDate.getTime();
@@ -51,7 +52,7 @@ describe('dateUtils', () => {
       // Monday to Sunday of the current week
       const monday = new Date('2023-05-15T12:00:00Z');
       const sunday = new Date('2023-05-21T12:00:00Z');
-      
+
       expect(isThisWeek(monday)).toBe(true);
       expect(isThisWeek(sunday)).toBe(true);
     });
@@ -59,7 +60,7 @@ describe('dateUtils', () => {
     it('should return false for dates outside the current week', () => {
       const lastWeek = new Date('2023-05-08T12:00:00Z');
       const nextWeek = new Date('2023-05-22T12:00:00Z');
-      
+
       expect(isThisWeek(lastWeek)).toBe(false);
       expect(isThisWeek(nextWeek)).toBe(false);
     });
@@ -81,7 +82,7 @@ describe('dateUtils', () => {
     it('should calculate days between two dates', () => {
       const date1 = new Date('2023-05-15T12:00:00Z');
       const date2 = new Date('2023-05-20T12:00:00Z');
-      
+
       expect(getDaysBetween(date1, date2)).toBe(5);
     });
 

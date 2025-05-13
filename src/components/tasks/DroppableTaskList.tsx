@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Task } from '@/types';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
-import { DragDropContext, Droppable, DropResult } from 'react-beautiful-dnd';
+import { StrictDragDropContext, StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
 import { useTaskContext } from '@/context';
 
 interface DroppableTaskListProps {
@@ -63,8 +63,8 @@ const DroppableTaskList: React.FC<DroppableTaskListProps> = ({
           <p className="text-space-cadet/70">{emptyMessage}</p>
         </div>
       ) : (
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId={droppableId} isDropDisabled={false} isCombineEnabled={false}>
+        <StrictDragDropContext onDragEnd={handleDragEnd}>
+          <StrictDroppable droppableId={droppableId} isDropDisabled={false}>
             {(provided, snapshot) => (
               <div
                 ref={provided.innerRef}
@@ -83,8 +83,8 @@ const DroppableTaskList: React.FC<DroppableTaskListProps> = ({
                 {provided.placeholder}
               </div>
             )}
-          </Droppable>
-        </DragDropContext>
+          </StrictDroppable>
+        </StrictDragDropContext>
       )}
 
       {isFormOpen && (
