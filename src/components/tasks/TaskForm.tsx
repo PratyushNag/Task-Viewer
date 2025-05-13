@@ -8,15 +8,19 @@ import { formatDate, getCurrentDate } from '@/utils/dateUtils';
 interface TaskFormProps {
   task?: Task | null;
   onClose: () => void;
+  defaultDate?: string;
+  defaultWeekNumber?: number;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, onClose }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, defaultWeekNumber }) => {
   const { addTask, updateTask } = useTaskContext();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    dueDate: formatDate(getCurrentDate()),
+    dueDate: defaultDate || formatDate(getCurrentDate()),
     priority: 'medium',
+    weekNumber: defaultWeekNumber || 1,
+    category: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -27,9 +31,11 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose }) => {
         description: task.description || '',
         dueDate: formatDate(task.dueDate),
         priority: task.priority,
+        weekNumber: task.weekNumber || defaultWeekNumber || 1,
+        category: task.category || '',
       });
     }
-  }, [task]);
+  }, [task, defaultWeekNumber]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -64,6 +70,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose }) => {
         description: formData.description || undefined,
         dueDate: formData.dueDate,
         priority: formData.priority as 'low' | 'medium' | 'high',
+        weekNumber: formData.weekNumber,
+        category: formData.category || undefined,
       });
     } else {
       addTask({
@@ -72,6 +80,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose }) => {
         dueDate: formData.dueDate,
         completed: false,
         priority: formData.priority as 'low' | 'medium' | 'high',
+        weekNumber: formData.weekNumber,
+        category: formData.category || undefined,
       });
     }
     onClose();
@@ -180,6 +190,41 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose }) => {
               <option value="medium">Medium</option>
               <option value="high">High</option>
             </select>
+          </div>
+
+          <div className="mb-4">
+            <label
+              htmlFor="weekNumber"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Week Number
+            </label>
+            <input
+              type="number"
+              id="weekNumber"
+              name="weekNumber"
+              value={formData.weekNumber}
+              onChange={handleChange}
+              min="1"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
+          </div>
+
+          <div className="mb-4">
+            <label
+              htmlFor="category"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Category (optional)
+            </label>
+            <input
+              type="text"
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+            />
           </div>
           <div className="flex justify-end space-x-3">
             <button

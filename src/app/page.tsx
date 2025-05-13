@@ -8,6 +8,7 @@ import {
   getMilestonesForPhase
 } from '@/utils/dataLoader';
 import TaskList from '@/components/tasks/TaskList';
+import SimpleDraggableTaskList from '@/components/tasks/SimpleDraggableTaskList';
 
 export default function Home() {
   const { state: { tasks, loading: tasksLoading } } = useTaskContext();
@@ -210,45 +211,12 @@ export default function Home() {
             {activeView === 'weeks' && (
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-space-cadet mb-4">Weeks</h2>
-                <div className="space-y-4">
-                  {phaseWeeks.map(weekNumber => (
-                    <div key={weekNumber} className="rounded-lg shadow-md overflow-hidden border border-space-cadet/30" style={{ backgroundColor: '#C2AFF0' }}>
-                      {/* Week Header - Clickable to expand/collapse */}
-                      <div
-                        className="p-4 cursor-pointer flex justify-between items-center"
-                        style={{ backgroundColor: '#C2AFF0' }}
-                        onClick={() => toggleWeek(weekNumber)}
-                      >
-                        <h3 className="text-lg font-medium text-space-cadet">
-                          Week {weekNumber}: {tasksByWeek[weekNumber][0]?.primaryFocus || 'Tasks'}
-                        </h3>
-                        <svg
-                          className={`w-5 h-5 text-royal-purple transform transition-transform ${expandedWeeks[weekNumber] ? 'rotate-180' : ''}`}
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </div>
-
-                      {/* Week Content - Shown when expanded */}
-                      {expandedWeeks[weekNumber] && (
-                        <div className="p-4 border-t border-space-cadet/30" style={{ backgroundColor: '#C2AFF0' }}>
-                          <div className="mb-2">
-                            <h4 className="font-medium text-royal-purple">Tasks:</h4>
-                          </div>
-                          <TaskList
-                            tasks={tasksByWeek[weekNumber]}
-                            title=""
-                            emptyMessage="No tasks for this week"
-                            itemsPerPage={10}
-                          />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                <SimpleDraggableTaskList
+                  phaseWeeks={phaseWeeks}
+                  tasksByWeek={tasksByWeek}
+                  expandedWeeks={expandedWeeks}
+                  toggleWeek={toggleWeek}
+                />
               </div>
             )}
           </div>

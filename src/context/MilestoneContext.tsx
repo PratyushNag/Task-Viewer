@@ -2,8 +2,6 @@
 
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Milestone } from '@/types';
-import { isStorageAvailable, clearAllData } from '@/utils/storageUtils';
-import { loadMilestonesFromJson } from '@/utils/dataLoader';
 import { generateId } from '@/utils/idUtils';
 import { getDeadlineColor } from '@/utils/dateUtils';
 
@@ -112,61 +110,134 @@ const milestoneReducer = (state: MilestoneState, action: MilestoneAction): Miles
 export const MilestoneProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(milestoneReducer, initialState);
 
-  // Load milestones from JSON on initial render
+  // Load milestones from MongoDB API on initial render
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    const fetchMilestones = async () => {
       try {
-        // Clear localStorage to ensure we always load from JSON
-        if (isStorageAvailable()) {
-          clearAllData();
+        const response = await fetch('/api/milestones');
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch milestones');
         }
 
-        // Load from JSON
-        const jsonMilestones = loadMilestonesFromJson();
-        dispatch({ type: 'LOAD_MILESTONES_SUCCESS', payload: jsonMilestones });
+        const data = await response.json();
+        dispatch({ type: 'LOAD_MILESTONES_SUCCESS', payload: data });
       } catch (error) {
+        console.error('Error loading milestones:', error);
         dispatch({
           type: 'LOAD_MILESTONES_ERROR',
           payload: 'Failed to load milestones',
         });
       }
-    } else {
-      dispatch({
-        type: 'LOAD_MILESTONES_ERROR',
-        payload: 'Window is not available',
-      });
-    }
+    };
+
+    fetchMilestones();
   }, []);
 
-  // Disable saving to localStorage to ensure we always use the JSON data
-  // This is commented out to prevent localStorage from overriding the JSON data
-  /*
-  useEffect(() => {
-    if (
-      typeof window !== 'undefined' &&
-      isStorageAvailable() &&
-      !state.loading
-    ) {
-      saveMilestones(state.milestones);
-    }
-  }, [state.milestones, state.loading]);
-  */
-
   // Context actions
-  const addMilestone = (milestone: Omit<Milestone, 'id' | 'createdAt' | 'updatedAt' | 'color'>) => {
-    dispatch({ type: 'ADD_MILESTONE', payload: milestone });
+  const addMilestone = async (milestone: Omit<Milestone, 'id' | 'createdAt' | 'updatedAt' | 'color'>) => {
+    try {
+      const newMilestone = {
+        ...milestone,
+        id: generateId(),
+        color: getDeadlineColor(milestone.dueDate),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const response = await fetch('/api/milestones', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newMilestone),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to add milestone');
+      }
+
+      const savedMilestone = await response.json();
+      dispatch({ type: 'ADD_MILESTONE', payload: milestone });
+    } catch (error) {
+      console.error('Error adding milestone:', error);
+    }
   };
 
-  const updateMilestone = (milestone: Milestone) => {
-    dispatch({ type: 'UPDATE_MILESTONE', payload: milestone });
+  const updateMilestone = async (milestone: Milestone) => {
+    try {
+      const updatedMilestone = {
+        ...milestone,
+        color: getDeadlineColor(milestone.dueDate),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const response = await fetch(`/api/milestones/${milestone.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedMilestone),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update milestone');
+      }
+
+      dispatch({ type: 'UPDATE_MILESTONE', payload: milestone });
+    } catch (error) {
+      console.error('Error updating milestone:', error);
+    }
   };
 
-  const deleteMilestone = (id: string) => {
-    dispatch({ type: 'DELETE_MILESTONE', payload: id });
+  const deleteMilestone = async (id: string) => {
+    try {
+      const response = await fetch(`/api/milestones/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete milestone');
+      }
+
+      dispatch({ type: 'DELETE_MILESTONE', payload: id });
+    } catch (error) {
+      console.error('Error deleting milestone:', error);
+    }
   };
 
-  const toggleMilestoneCompletion = (id: string) => {
-    dispatch({ type: 'TOGGLE_MILESTONE_COMPLETION', payload: id });
+  const toggleMilestoneCompletion = async (id: string) => {
+    try {
+      // Find the milestone to toggle
+      const milestone = state.milestones.find((m) => m.id === id);
+
+      if (!milestone) {
+        throw new Error('Milestone not found');
+      }
+
+      // Update the milestone with toggled completion
+      const updatedMilestone = {
+        ...milestone,
+        completed: !milestone.completed,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const response = await fetch(`/api/milestones/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedMilestone),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to toggle milestone completion');
+      }
+
+      dispatch({ type: 'TOGGLE_MILESTONE_COMPLETION', payload: id });
+    } catch (error) {
+      console.error('Error toggling milestone completion:', error);
+    }
   };
 
   return (

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Task } from '@/types';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
+import { StrictDragDropContext, StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
 
 interface TaskListProps {
   tasks: Task[];
@@ -44,6 +45,18 @@ const TaskList: React.FC<TaskListProps> = ({
     setCurrentPage(pageNumber);
   };
 
+  // Handler for drag end - implement task movement
+  const handleDragEnd = (result: DropResult) => {
+    // If there's no destination or the drag was cancelled, return early
+    if (!result.destination) {
+      return;
+    }
+
+    // For now, we're just handling reordering within the same list
+    // We'll implement cross-list movement in the page component
+    console.log('Drag ended:', result);
+  };
+
   return (
     <div className="rounded-lg shadow p-6" style={{ backgroundColor: '#C2AFF0' }}>
       <div className="flex justify-between items-center mb-6">
@@ -65,15 +78,42 @@ const TaskList: React.FC<TaskListProps> = ({
         </div>
       ) : (
         <>
-          <div className="space-y-4">
-            {currentTasks.map((task) => (
-              <TaskItem
-                key={task.id}
-                task={task}
-                onEdit={() => handleEdit(task)}
-              />
-            ))}
-          </div>
+          {/* We need to check if we're inside a parent DragDropContext */}
+          {/* If the title is empty, we're being used inside DroppableWeekList */}
+          {title === '' ? (
+            <div className="space-y-4">
+              {currentTasks.map((task, index) => (
+                <TaskItem
+                  key={task.id}
+                  task={task}
+                  index={index}
+                  onEdit={() => handleEdit(task)}
+                />
+              ))}
+            </div>
+          ) : (
+            <StrictDragDropContext onDragEnd={handleDragEnd}>
+              <StrictDroppable droppableId={`task-list-${title}`}>
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="space-y-4"
+                  >
+                    {currentTasks.map((task, index) => (
+                      <TaskItem
+                        key={task.id}
+                        task={task}
+                        index={index}
+                        onEdit={() => handleEdit(task)}
+                      />
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </StrictDroppable>
+            </StrictDragDropContext>
+          )}
 
           {/* Pagination */}
           {totalPages > 1 && (

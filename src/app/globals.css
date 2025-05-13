@@ -31,3 +31,52 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Drag and Drop Styles */
+.task-item {
+  transition: background-color 0.2s, box-shadow 0.2s, transform 0.2s;
+  cursor: grab;
+  user-select: none;
+}
+
+.task-item.is-dragging {
+  background-color: rgba(126, 82, 160, 0.1);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  cursor: grabbing;
+  z-index: 9999;
+  transform: scale(1.05);
+}
+
+.droppable-container {
+  min-height: 50px;
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
+.droppable-container.is-over {
+  background-color: rgba(210, 149, 191, 0.3);
+  border: 2px dashed #7E52A0;
+  box-shadow: inset 0 0 10px rgba(126, 82, 160, 0.2);
+}
+
+/* React Beautiful DnD Styles */
+.draggable-placeholder {
+  opacity: 0.5;
+}
+
+.dragging {
+  cursor: grabbing !important;
+  opacity: 0.8;
+  transform: scale(1.05);
+  z-index: 9999;
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* Ensure drag handles are visible */
+[data-rbd-drag-handle-draggable-id] {
+  cursor: grab;
+}
+
+[data-rbd-drag-handle-draggable-id]:active {
+  cursor: grabbing;
+}

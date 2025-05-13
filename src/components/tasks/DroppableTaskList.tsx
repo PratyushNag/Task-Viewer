@@ -4,26 +4,26 @@ import React, { useState } from 'react';
 import { Task } from '@/types';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
-import { getTasksForWeek, getDateRangeForWeek } from '@/utils/dataLoader';
+import { StrictDragDropContext, StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
+import { useTaskContext } from '@/context';
 
-interface WeeklyTaskListProps {
+interface DroppableTaskListProps {
   tasks: Task[];
-  weekNumber: number;
-  title?: string;
+  droppableId: string;
+  title: string;
   emptyMessage?: string;
+  onTaskMoved?: (result: DropResult) => void;
 }
 
-const WeeklyTaskList: React.FC<WeeklyTaskListProps> = ({
+const DroppableTaskList: React.FC<DroppableTaskListProps> = ({
   tasks,
-  weekNumber,
+  droppableId,
   title,
-  emptyMessage = 'No tasks found for this week',
+  emptyMessage = 'No tasks found',
+  onTaskMoved,
 }) => {
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-
-  const weekTasks = getTasksForWeek(weekNumber, tasks);
-  const dateRange = getDateRangeForWeek(weekNumber, tasks, []);
 
   const handleEdit = (task: Task) => {
     setEditingTask(task);
@@ -35,29 +35,18 @@ const WeeklyTaskList: React.FC<WeeklyTaskListProps> = ({
     setIsFormOpen(false);
   };
 
-  // Group tasks by category
-  const tasksByCategory: Record<string, Task[]> = {};
-  weekTasks.forEach(task => {
-    const category = task.category || 'Other';
-    if (!tasksByCategory[category]) {
-      tasksByCategory[category] = [];
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    if (onTaskMoved) {
+      onTaskMoved(result);
     }
-    tasksByCategory[category].push(task);
-  });
+  };
 
   return (
-    <div className="rounded-lg shadow p-6 mb-6" style={{ backgroundColor: '#C2AFF0' }}>
+    <div className="rounded-lg shadow p-6" style={{ backgroundColor: '#C2AFF0' }}>
       <div className="flex justify-between items-center mb-6">
-        <div>
-          <h2 className="text-xl font-semibold text-space-cadet">
-            {title || `Week ${weekNumber}`}
-          </h2>
-          {dateRange && (
-            <p className="text-sm text-space-cadet/70">
-              {dateRange.start} to {dateRange.end}
-            </p>
-          )}
-        </div>
+        <h2 className="text-xl font-semibold text-space-cadet">{title}</h2>
         <button
           onClick={() => setIsFormOpen(true)}
           className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-royal-purple"
@@ -69,19 +58,21 @@ const WeeklyTaskList: React.FC<WeeklyTaskListProps> = ({
         </button>
       </div>
 
-      {weekTasks.length === 0 ? (
+      {tasks.length === 0 ? (
         <div className="text-center py-8">
           <p className="text-space-cadet/70">{emptyMessage}</p>
         </div>
       ) : (
-        <div className="space-y-6">
-          {Object.entries(tasksByCategory).map(([category, categoryTasks]) => (
-            <div key={category} className="space-y-4">
-              <h3 className="text-lg font-medium text-space-cadet border-b border-space-cadet/30 pb-2">
-                {category}
-              </h3>
-              <div className="space-y-4">
-                {categoryTasks.map((task, index) => (
+        <StrictDragDropContext onDragEnd={handleDragEnd}>
+          <StrictDroppable droppableId={droppableId} isDropDisabled={false}>
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`space-y-4 min-h-[100px] ${snapshot.isDraggingOver ? 'bg-royal-purple/10 rounded-lg p-2' : ''
+                  }`}
+              >
+                {tasks.map((task, index) => (
                   <TaskItem
                     key={task.id}
                     task={task}
@@ -89,10 +80,11 @@ const WeeklyTaskList: React.FC<WeeklyTaskListProps> = ({
                     onEdit={() => handleEdit(task)}
                   />
                 ))}
+                {provided.placeholder}
               </div>
-            </div>
-          ))}
-        </div>
+            )}
+          </StrictDroppable>
+        </StrictDragDropContext>
       )}
 
       {isFormOpen && (
@@ -105,4 +97,4 @@ const WeeklyTaskList: React.FC<WeeklyTaskListProps> = ({
   );
 };
 
-export default WeeklyTaskList;
+export default DroppableTaskList;
