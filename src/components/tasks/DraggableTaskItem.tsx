@@ -4,6 +4,7 @@ import React from 'react';
 import { Task } from '@/types';
 import { formatDate, isPast } from '@/utils/dateUtils';
 import { StrictDraggable } from '@/components/dnd/DragDropWrapper';
+import DragHandleIcon from '@/components/dnd/DragHandleIcon';
 
 interface DraggableTaskItemProps {
   task: Task;
@@ -31,20 +32,31 @@ const DraggableTaskItem: React.FC<DraggableTaskItemProps> = ({ task, index, onEd
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
-            className={`p-4 mb-3 rounded-lg shadow-sm border ${isOverdue ? 'border-red-300' : 'border-space-cadet/30'
-              } ${snapshot.isDragging ? 'opacity-75 shadow-lg bg-royal-purple/20' : ''}`}
+            className={`p-4 mb-3 rounded-lg shadow-sm border task-item ${isOverdue ? 'border-red-300' : 'border-space-cadet/30'
+              } ${snapshot.isDragging ? 'dragging' : ''}`}
             style={{
-              backgroundColor: '#C2AFF0',
+              backgroundColor: snapshot.isDragging ? '#7E52A0' : '#C2AFF0',
+              color: snapshot.isDragging ? 'white' : 'inherit',
+              transition: 'all 0.2s ease',
+              boxShadow: snapshot.isDragging ? '0 8px 16px rgba(0, 0, 0, 0.3)' : '0 2px 4px rgba(0, 0, 0, 0.1)',
+              transform: snapshot.isDragging ? 'scale(1.05)' : 'scale(1)',
+              zIndex: snapshot.isDragging ? 9999 : 1,
+              cursor: 'grab',
               ...provided.draggableProps.style
             }}
           >
             <div className="flex items-start justify-between">
               <div className="flex items-start space-x-3">
                 <div>
-                  <h3 className={`text-lg font-medium ${task.completed ? 'line-through text-gray-500' : 'text-space-cadet'
-                    }`}>
-                    {task.title}
-                  </h3>
+                  <div className="flex items-center">
+                    <h3 className={`text-lg font-medium ${task.completed ? 'line-through text-gray-500' : 'text-space-cadet'
+                      }`}>
+                      {task.title}
+                    </h3>
+                    <span className="ml-2 flex items-center justify-center p-1 rounded drag-handle" title="Drag to move">
+                      <DragHandleIcon className="h-5 w-5" />
+                    </span>
+                  </div>
                   {task.description && (
                     <p className={`mt-1 text-sm ${task.completed ? 'text-gray-400' : 'text-space-cadet/80'
                       }`}>

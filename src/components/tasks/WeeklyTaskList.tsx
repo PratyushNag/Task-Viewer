@@ -49,11 +49,11 @@ const WeeklyTaskList: React.FC<WeeklyTaskListProps> = ({
     <div className="rounded-lg shadow p-6 mb-6" style={{ backgroundColor: '#C2AFF0' }}>
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-xl font-semibold text-space-cadet">
+          <h2 className="text-xl font-semibold text-black">
             {title || `Week ${weekNumber}`}
           </h2>
           {dateRange && (
-            <p className="text-sm text-space-cadet/70">
+            <p className="text-sm text-black/70">
               {dateRange.start} to {dateRange.end}
             </p>
           )}
@@ -71,13 +71,13 @@ const WeeklyTaskList: React.FC<WeeklyTaskListProps> = ({
 
       {weekTasks.length === 0 ? (
         <div className="text-center py-8">
-          <p className="text-space-cadet/70">{emptyMessage}</p>
+          <p className="text-black/70">{emptyMessage}</p>
         </div>
       ) : (
         <div className="space-y-6">
           {Object.entries(tasksByCategory).map(([category, categoryTasks]) => (
             <div key={category} className="space-y-4">
-              <h3 className="text-lg font-medium text-space-cadet border-b border-space-cadet/30 pb-2">
+              <h3 className="text-lg font-medium text-black border-b border-black/30 pb-2">
                 {category}
               </h3>
               <div className="space-y-4">

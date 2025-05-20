@@ -28,7 +28,7 @@ const Header: React.FC = () => {
                   priority
                   style={{ objectFit: 'contain', maxHeight: '100%' }}
                 />
-                <h1 className="text-xl font-bold text-white">Calendar View</h1>
+                <h1 className="text-xl font-bold text-white">Task Viewer</h1>
               </div>
             </div>
             <nav className="ml-6 flex flex-wrap gap-4 sm:gap-8">

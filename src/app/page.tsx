@@ -166,34 +166,36 @@ export default function Home() {
                 <h2 className="text-xl font-semibold text-space-cadet mb-4">Milestones</h2>
                 <div className="space-y-4">
                   {phaseMilestones.length > 0 ? (
-                    <div className="rounded-lg shadow-sm border border-space-cadet/30 p-6" style={{ backgroundColor: '#C2AFF0' }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {phaseMilestones.map(milestone => (
-                        <div key={milestone.id} className="mb-6 last:mb-0">
-                          <div className="flex items-start">
-                            <div className="flex-shrink-0 mt-1">
-                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#29274C' }}></div>
-                            </div>
-                            <div className="ml-4">
-                              <h3 className="text-lg font-medium text-space-cadet">
-                                {milestone.title}
-                              </h3>
-                              {milestone.description && (
-                                <p className="text-gray-700 mt-1">{milestone.description}</p>
-                              )}
+                        <div
+                          key={milestone.id}
+                          className="rounded-lg shadow-sm border border-space-cadet/30 p-6"
+                          style={{ backgroundColor: '#C2AFF0' }}
+                        >
+                          <h3 className="text-lg font-medium text-space-cadet mb-2">
+                            {milestone.title}
+                          </h3>
+                          {milestone.description && (
+                            <p className="text-space-cadet/80 mb-4">{milestone.description}</p>
+                          )}
 
-                              {tasksByWeek[milestone.weekNumber || 0]?.length > 0 && (
-                                <div className="mt-3">
-                                  <p className="text-sm font-medium text-royal-purple mb-2">Tasks:</p>
-                                  <ul className="list-disc pl-5 space-y-1">
-                                    {tasksByWeek[milestone.weekNumber || 0]?.map(task => (
-                                      <li key={task.id} className="text-sm text-gray-700">
-                                        {task.title}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
+                          {tasksByWeek[milestone.weekNumber || 0]?.length > 0 && (
+                            <div className="mt-3">
+                              <p className="text-sm font-medium text-royal-purple mb-2">Tasks:</p>
+                              <ul className="pl-5 space-y-1">
+                                {tasksByWeek[milestone.weekNumber || 0]?.map(task => (
+                                  <li key={task.id} className="text-sm text-space-cadet/80 flex items-start">
+                                    <div className="w-2 h-2 rounded-full mt-1.5 -ml-3 mr-2" style={{ backgroundColor: '#29274C' }}></div>
+                                    {task.title}
+                                  </li>
+                                ))}
+                              </ul>
                             </div>
+                          )}
+
+                          <div className="mt-4 text-xs text-space-cadet/70">
+                            Week {milestone.weekNumber}
                           </div>
                         </div>
                       ))}

@@ -17,6 +17,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    startDate: defaultDate || formatDate(getCurrentDate()),
     dueDate: defaultDate || formatDate(getCurrentDate()),
     priority: 'medium',
     weekNumber: defaultWeekNumber || 1,
@@ -29,6 +30,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
       setFormData({
         title: task.title,
         description: task.description || '',
+        startDate: task.startDate ? formatDate(task.startDate) : formatDate(getCurrentDate()),
         dueDate: formatDate(task.dueDate),
         priority: task.priority,
         weekNumber: task.weekNumber || defaultWeekNumber || 1,
@@ -68,6 +70,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
         ...task,
         title: formData.title,
         description: formData.description || undefined,
+        startDate: formData.startDate,
         dueDate: formData.dueDate,
         priority: formData.priority as 'low' | 'medium' | 'high',
         weekNumber: formData.weekNumber,
@@ -77,6 +80,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
       addTask({
         title: formData.title,
         description: formData.description || undefined,
+        startDate: formData.startDate,
         dueDate: formData.dueDate,
         completed: false,
         priority: formData.priority as 'low' | 'medium' | 'high',
@@ -88,15 +92,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
   };
 
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+    <div className="fixed inset-0 backdrop-blur-sm bg-space-cadet bg-opacity-60 flex items-center justify-center z-50">
+      <div className="rounded-lg p-4 w-full max-w-md" style={{ backgroundColor: '#F8D8E3', boxShadow: '0 8px 16px rgba(0, 0, 0, 0.15)' }}>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-gray-900">
-            {task ? 'Edit Task' : 'Add New Task'}
+          <h2 className="text-xl font-semibold text-black">
+            {task ? 'Edit Task' : `Add New Task${defaultWeekNumber ? ` for Week ${defaultWeekNumber}` : ''}`}
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-500"
+            className="text-black/70 hover:text-black"
             aria-label="Close"
           >
             <svg
@@ -116,10 +120,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
           </button>
         </div>
         <form onSubmit={handleSubmit}>
-          <div className="mb-4">
+          <div className="mb-3">
             <label
               htmlFor="title"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-semibold text-black mb-1"
             >
               Title
             </label>
@@ -129,17 +133,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${errors.title ? 'border-red-300' : ''
+              className={`mt-1 block w-full rounded-lg border-0 px-3 py-2 shadow-md focus:border-royal-purple focus:ring-royal-purple text-sm bg-royal-purple text-black ${errors.title ? 'border-red-300' : ''
                 }`}
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
             />
             {errors.title && (
               <p className="mt-1 text-sm text-red-600">{errors.title}</p>
             )}
           </div>
-          <div className="mb-4">
+          <div className="mb-3">
             <label
               htmlFor="description"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-semibold text-black mb-1"
             >
               Description (optional)
             </label>
@@ -149,13 +154,32 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
               rows={3}
               value={formData.description}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 block w-full rounded-lg border-0 px-3 py-2 shadow-md focus:border-royal-purple focus:ring-royal-purple text-sm bg-royal-purple text-black"
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
             />
           </div>
-          <div className="mb-4">
+          <div className="mb-3">
+            <label
+              htmlFor="startDate"
+              className="block text-sm font-semibold text-black mb-1"
+            >
+              Start Date
+            </label>
+            <input
+              type="date"
+              id="startDate"
+              name="startDate"
+              value={formData.startDate}
+              onChange={handleChange}
+              className={`mt-1 block w-full rounded-lg border-0 px-3 py-2 shadow-md focus:border-royal-purple focus:ring-royal-purple text-sm bg-royal-purple text-black`}
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
+            />
+          </div>
+
+          <div className="mb-3">
             <label
               htmlFor="dueDate"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-semibold text-black mb-1"
             >
               Due Date
             </label>
@@ -165,17 +189,18 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
               name="dueDate"
               value={formData.dueDate}
               onChange={handleChange}
-              className={`mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm ${errors.dueDate ? 'border-red-300' : ''
+              className={`mt-1 block w-full rounded-lg border-0 px-3 py-2 shadow-md focus:border-royal-purple focus:ring-royal-purple text-sm bg-royal-purple text-black ${errors.dueDate ? 'border-red-300' : ''
                 }`}
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
             />
             {errors.dueDate && (
               <p className="mt-1 text-sm text-red-600">{errors.dueDate}</p>
             )}
           </div>
-          <div className="mb-4">
+          <div className="mb-3">
             <label
               htmlFor="priority"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-semibold text-black mb-1"
             >
               Priority
             </label>
@@ -184,7 +209,8 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
               name="priority"
               value={formData.priority}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 block w-full rounded-lg border-0 px-3 py-2 shadow-md focus:border-royal-purple focus:ring-royal-purple text-sm bg-royal-purple text-black"
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
             >
               <option value="low">Low</option>
               <option value="medium">Medium</option>
@@ -192,10 +218,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
             </select>
           </div>
 
-          <div className="mb-4">
+          <div className="mb-3">
             <label
               htmlFor="weekNumber"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-semibold text-black mb-1"
             >
               Week Number
             </label>
@@ -206,14 +232,15 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
               value={formData.weekNumber}
               onChange={handleChange}
               min="1"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 block w-full rounded-lg border-0 px-3 py-2 shadow-md focus:border-royal-purple focus:ring-royal-purple text-sm bg-royal-purple text-black"
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
             />
           </div>
 
-          <div className="mb-4">
+          <div className="mb-3">
             <label
               htmlFor="category"
-              className="block text-sm font-medium text-gray-700"
+              className="block text-sm font-semibold text-black mb-1"
             >
               Category (optional)
             </label>
@@ -223,20 +250,23 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
               name="category"
               value={formData.category}
               onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+              className="mt-1 block w-full rounded-lg border-0 px-3 py-2 shadow-md focus:border-royal-purple focus:ring-royal-purple text-sm bg-royal-purple text-black"
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
             />
           </div>
           <div className="flex justify-end space-x-3">
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="inline-flex justify-center py-2 px-4 border-0 shadow-md text-sm font-medium rounded-lg text-black bg-royal-purple hover:bg-space-cadet focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-royal-purple transition-colors duration-200"
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="inline-flex justify-center py-2 px-4 border-0 shadow-md text-sm font-medium rounded-lg text-white bg-royal-purple hover:bg-space-cadet focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-royal-purple transition-colors duration-200"
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)', backgroundColor: '#7E52A0' }}
             >
               {task ? 'Update' : 'Create'}
             </button>

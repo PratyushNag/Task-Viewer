@@ -9,7 +9,7 @@ The goal is to enable users to:
 1. Move tasks between different days within the same week
 2. Move tasks between different weeks
 3. Update the database when tasks are moved
-
+  
 ## Implementation Approach
 
 We'll implement this using a drag-and-drop interface with the following components:

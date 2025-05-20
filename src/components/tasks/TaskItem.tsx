@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Task } from '@/types';
 import { formatDate, isPast } from '@/utils/dateUtils';
 import { useTaskContext } from '@/context';
 import { StrictDraggable } from '@/components/dnd/DragDropWrapper';
+import DragHandleIcon from '@/components/dnd/DragHandleIcon';
 
 interface TaskItemProps {
   task: Task;
@@ -14,6 +15,7 @@ interface TaskItemProps {
 
 const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
   const { toggleTaskCompletion, deleteTask } = useTaskContext();
+  const dragHandleRef = useRef<HTMLSpanElement>(null);
 
   const handleToggle = () => {
     toggleTaskCompletion(task.id);
@@ -26,24 +28,33 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
   };
 
   const priorityClasses = {
-    low: 'bg-lilac/30 text-space-cadet',
-    medium: 'bg-royal-purple/30 text-space-cadet',
-    high: 'bg-space-cadet/30 text-space-cadet',
+    low: 'bg-lilac/30 text-black',
+    medium: 'bg-royal-purple/30 text-black',
+    high: 'bg-space-cadet/30 text-black',
   };
 
   const isOverdue = !task.completed && isPast(task.dueDate);
 
   return (
-    <StrictDraggable draggableId={task.id} index={index}>
+    <StrictDraggable
+      draggableId={task.id}
+      index={index}
+      disableInteractiveElementBlocking={true}
+    >
       {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className={`p-4 mb-3 rounded-lg shadow-sm border ${isOverdue ? 'border-red-300' : 'border-space-cadet/30'
-            } ${snapshot.isDragging ? 'opacity-75 shadow-lg' : ''}`}
+          className={`p-4 mb-3 rounded-lg shadow-sm border task-item ${isOverdue ? 'border-red-300' : 'border-space-cadet/30'
+            } ${snapshot.isDragging ? 'dragging' : ''}`}
           style={{
-            backgroundColor: '#C2AFF0',
+            backgroundColor: snapshot.isDragging ? '#7E52A0' : '#C2AFF0',
+            color: snapshot.isDragging ? 'white' : 'inherit',
+            transition: 'all 0.2s ease',
+            boxShadow: snapshot.isDragging ? '0 8px 16px rgba(0, 0, 0, 0.3)' : '0 2px 4px rgba(0, 0, 0, 0.1)',
+            transform: snapshot.isDragging ? 'scale(1.05)' : 'scale(1)',
+            zIndex: snapshot.isDragging ? 9999 : 1,
+            cursor: 'pointer',
             ...provided.draggableProps.style
           }}
         >
@@ -55,15 +66,28 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
                   checked={task.completed}
                   onChange={handleToggle}
                   className="h-5 w-5 text-royal-purple rounded focus:ring-royal-purple"
+                  onClick={(e) => e.stopPropagation()}
                 />
               </div>
               <div>
-                <h3 className={`text-lg font-medium ${task.completed ? 'line-through text-gray-500' : 'text-space-cadet'
-                  }`}>
-                  {task.title}
-                </h3>
+                <div className="flex items-center">
+                  <h3 className={`text-lg font-medium ${task.completed ? 'line-through text-gray-500' : 'text-black'
+                    }`}>
+                    {task.title}
+                  </h3>
+                  <span
+                    ref={dragHandleRef}
+                    className="ml-2 flex items-center justify-center p-1 rounded drag-handle"
+                    title="Drag to move"
+                    {...provided.dragHandleProps}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{ touchAction: 'none' }}
+                  >
+                    <DragHandleIcon className="h-5 w-5" />
+                  </span>
+                </div>
                 {task.description && (
-                  <p className={`mt-1 text-sm ${task.completed ? 'text-gray-400' : 'text-space-cadet/80'
+                  <p className={`mt-1 text-sm ${task.completed ? 'text-gray-400' : 'text-black/80'
                     }`}>
                     {task.description}
                   </p>
@@ -75,11 +99,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
                   </span>
                   <div className="flex flex-col">
                     {task.startDate && (
-                      <span className="text-xs text-space-cadet/70">
+                      <span className="text-xs text-black/70">
                         Start: {formatDate(task.startDate)}
                       </span>
                     )}
-                    <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-space-cadet/70'
+                    <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-black/70'
                       }`}>
                       {isOverdue ? 'Overdue: ' : 'Due: '}
                       {formatDate(task.dueDate)}
@@ -91,7 +115,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
             <div className="flex space-x-2">
               <button
                 onClick={onEdit}
-                className="text-space-cadet/60 hover:text-royal-purple"
+                className="text-black/60 hover:text-royal-purple"
                 aria-label="Edit task"
               >
                 <svg
@@ -111,7 +135,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
               </button>
               <button
                 onClick={handleDelete}
-                className="text-space-cadet/60 hover:text-red-500"
+                className="text-black/60 hover:text-red-500"
                 aria-label="Delete task"
               >
                 <svg
