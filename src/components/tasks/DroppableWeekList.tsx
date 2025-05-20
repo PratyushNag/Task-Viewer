@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import { Task } from '@/types';
-import { StrictDragDropContext, StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
+import { StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
 import { useTaskContext } from '@/context';
 import { getWeekStartDate } from '@/utils/dateUtils';
 import { addDays, format } from 'date-fns';
-import DraggableTaskItem from './DraggableTaskItem';
 import TaskForm from './TaskForm';
+import DragDropProvider from '@/components/dnd/DragDropProvider';
+import DraggableTaskItemWithHandle from './DraggableTaskItemWithHandle';
 
 interface DroppableWeekListProps {
   phaseWeeks: number[];
@@ -116,7 +117,7 @@ const DroppableWeekList: React.FC<DroppableWeekListProps> = ({
 
   return (
     <>
-      <StrictDragDropContext onDragEnd={handleDragEnd}>
+      <DragDropProvider onDragEnd={handleDragEnd}>
         <div className="space-y-4">
           {phaseWeeks.map(weekNumber => (
             <div key={weekNumber} className="rounded-lg shadow-md overflow-hidden border border-space-cadet/30" style={{ backgroundColor: '#C2AFF0' }}>
@@ -159,11 +160,11 @@ const DroppableWeekList: React.FC<DroppableWeekListProps> = ({
                         ) : (
                           <div className="space-y-4">
                             {tasksByWeek[weekNumber].map((task, index) => (
-                              <DraggableTaskItem
+                              <DraggableTaskItemWithHandle
                                 key={task.id}
                                 task={task}
                                 index={index}
-                                onEdit={() => handleEdit(task)}
+                                onEdit={handleEdit}
                               />
                             ))}
                           </div>
@@ -177,7 +178,7 @@ const DroppableWeekList: React.FC<DroppableWeekListProps> = ({
             </div>
           ))}
         </div>
-      </StrictDragDropContext>
+      </DragDropProvider>
 
       {isFormOpen && (
         <TaskForm

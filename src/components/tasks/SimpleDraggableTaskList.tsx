@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import { Task } from '@/types';
-import { StrictDragDropContext, StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
+import { StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
 import { useTaskContext } from '@/context';
 import { getWeekStartDate } from '@/utils/dateUtils';
 import { addDays, format } from 'date-fns';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
+import DragDropProvider from '@/components/dnd/DragDropProvider';
 
 interface SimpleDraggableTaskListProps {
   phaseWeeks: number[];
@@ -38,7 +39,7 @@ const SimpleDraggableTaskList: React.FC<SimpleDraggableTaskListProps> = ({
 
   const handleDragEnd = (result: DropResult) => {
     console.log('Drag end result:', result);
-    
+
     // If there's no destination or the drag was cancelled, return early
     if (!result.destination) {
       console.log('No destination, drag cancelled');
@@ -76,15 +77,15 @@ const SimpleDraggableTaskList: React.FC<SimpleDraggableTaskListProps> = ({
 
     // Calculate new start and due dates based on the destination week
     const destWeekStart = getWeekStartDate(destWeekNumber);
-    
+
     // Determine how many days to add to the week start date
     // For simplicity, we'll keep the same day of the week
     const taskDate = new Date(task.startDate);
     const dayOfWeek = taskDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    
+
     // Calculate new start date (same day of week in the new week)
     const newStartDate = addDays(destWeekStart, dayOfWeek === 0 ? 6 : dayOfWeek - 1); // Adjust for Sunday
-    
+
     // Calculate new due date (maintain the same duration)
     const taskDuration = Math.max(
       1,
@@ -110,7 +111,7 @@ const SimpleDraggableTaskList: React.FC<SimpleDraggableTaskListProps> = ({
 
   return (
     <>
-      <StrictDragDropContext onDragEnd={handleDragEnd}>
+      <DragDropProvider onDragEnd={handleDragEnd}>
         <div className="space-y-4">
           {phaseWeeks.map(weekNumber => (
             <div key={weekNumber} className="rounded-lg shadow-md overflow-hidden border border-space-cadet/30" style={{ backgroundColor: '#C2AFF0' }}>
@@ -171,8 +172,8 @@ const SimpleDraggableTaskList: React.FC<SimpleDraggableTaskListProps> = ({
             </div>
           ))}
         </div>
-      </StrictDragDropContext>
-      
+      </DragDropProvider>
+
       {isFormOpen && (
         <TaskForm
           task={editingTask}

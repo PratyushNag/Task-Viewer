@@ -1,0 +1,204 @@
+/* Drag and Drop Styles */
+
+/* Draggable item styles */
+.task-item.dragging,
+.task-item.being-dragged {
+  opacity: 0.9;
+  cursor: grabbing !important;
+  transform: scale(1.05);
+  z-index: 9999;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
+  background-color: #7E52A0 !important;
+  color: white !important;
+}
+
+/* Droppable area styles */
+.droppable-container.is-over,
+.simple-droppable.is-over {
+  background-color: rgba(126, 82, 160, 0.2) !important;
+  border: 2px dashed #7E52A0 !important;
+  box-shadow: 0 0 8px rgba(126, 82, 160, 0.3) !important;
+}
+
+/* Add a pulsing effect to the droppable area when dragging over */
+@keyframes pulse-border {
+  0% {
+    border-color: rgba(126, 82, 160, 0.5);
+  }
+
+  50% {
+    border-color: rgba(126, 82, 160, 1);
+  }
+
+  100% {
+    border-color: rgba(126, 82, 160, 0.5);
+  }
+}
+
+.droppable-container.is-over,
+.simple-droppable.is-over {
+  animation: pulse-border 1.5s infinite;
+}
+
+/* Improve the drag handle visibility */
+.drag-handle {
+  cursor: grab;
+  opacity: 0.8;
+  transition: all 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border-radius: 4px;
+  background-color: rgba(126, 82, 160, 0.3);
+  color: #29274C;
+  margin-left: 8px;
+  border: 1px dashed transparent;
+}
+
+.task-item:hover .drag-handle {
+  opacity: 1;
+  background-color: rgba(126, 82, 160, 0.4);
+  transform: scale(1.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px dashed rgba(126, 82, 160, 0.7);
+}
+
+.drag-handle:hover {
+  opacity: 1;
+  background-color: rgba(126, 82, 160, 0.6);
+  transform: scale(1.2);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 1px dashed rgba(126, 82, 160, 1);
+}
+
+.drag-handle:active,
+.drag-handle.dragging-active {
+  cursor: grabbing !important;
+  background-color: rgba(126, 82, 160, 0.8) !important;
+  transform: scale(1.1) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+  border: 1px solid rgba(126, 82, 160, 1) !important;
+}
+
+/* Add a subtle animation to the drag handle to draw attention */
+@keyframes pulse-handle {
+  0% {
+    transform: scale(1);
+    border-color: rgba(126, 82, 160, 0.3);
+  }
+
+  50% {
+    transform: scale(1.1);
+    border-color: rgba(126, 82, 160, 0.7);
+  }
+
+  100% {
+    transform: scale(1);
+    border-color: rgba(126, 82, 160, 0.3);
+  }
+}
+
+.task-item:hover .drag-handle {
+  animation: pulse-handle 2s infinite;
+}
+
+/* Fallback drag and drop styles */
+.fallback-dragging {
+  opacity: 0.5;
+  border: 2px dashed #7E52A0 !important;
+}
+
+.fallback-drag-preview {
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  border: 2px solid #7E52A0;
+  background-color: #7E52A0 !important;
+  color: white !important;
+}
+
+.fallback-droppable-active {
+  background-color: rgba(126, 82, 160, 0.2) !important;
+  border: 2px dashed #7E52A0 !important;
+  box-shadow: 0 0 8px rgba(126, 82, 160, 0.3) !important;
+}
+
+/* Add a subtle transition effect when starting to drag */
+.task-item {
+  transition: transform 0.2s, box-shadow 0.2s, opacity 0.2s;
+}
+
+/* Touch-specific styles */
+.touch-drag-preview {
+  box-shadow: 0 0 15px rgba(126, 82, 160, 0.8) !important;
+  transition: opacity 0.2s;
+  z-index: 9999 !important;
+  background-color: #7E52A0 !important;
+  color: white !important;
+  border: 2px solid white !important;
+}
+
+/* Task item being dragged with touch */
+.task-item.touch-dragging {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+/* Drop target active during touch drag */
+.simple-droppable.touch-drop-active {
+  background-color: rgba(126, 82, 160, 0.3) !important;
+  border: 2px dashed #7E52A0 !important;
+  box-shadow: 0 0 12px rgba(126, 82, 160, 0.5) !important;
+}
+
+/* Improve touch target size for drag handles on mobile */
+@media (max-width: 768px) {
+  .drag-handle {
+    padding: 10px !important;
+    margin: 0 4px;
+    background-color: rgba(126, 82, 160, 0.1);
+    border-radius: 50%;
+  }
+
+  .drag-handle svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Make the task items slightly larger on mobile for better touch targets */
+  .task-item {
+    padding: 12px !important;
+  }
+
+  /* Make drop targets more visible on mobile */
+  .simple-droppable {
+    border: 2px dashed rgba(126, 82, 160, 0.3) !important;
+    margin-bottom: 8px !important;
+  }
+}
+
+/* Add a pulsing effect to the drag handle on mobile to indicate it's draggable */
+@media (max-width: 768px) {
+  @keyframes pulse-mobile {
+    0% {
+      transform: scale(1);
+      opacity: 0.8;
+      background-color: rgba(126, 82, 160, 0.1);
+    }
+
+    50% {
+      transform: scale(1.1);
+      opacity: 1;
+      background-color: rgba(126, 82, 160, 0.2);
+    }
+
+    100% {
+      transform: scale(1);
+      opacity: 0.8;
+      background-color: rgba(126, 82, 160, 0.1);
+    }
+  }
+
+  .drag-handle {
+    animation: pulse-mobile 2s infinite;
+  }
+}

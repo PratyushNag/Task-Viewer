@@ -2,20 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import Task from '@/models/Task';
 
-export type RouteParams = {
-  params: {
-    id: string;
-  };
-};
-
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(
-  req: NextRequest,
-  { params }: RouteParams
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const taskId = params.id;
     await connectToDatabase();
+    const taskId = params.id;
 
     const task = await Task.findOne({ id: taskId });
 
@@ -38,15 +32,15 @@ export async function GET(
 
 // PUT /api/tasks/[id] - Update a task
 export async function PUT(
-  req: NextRequest,
-  { params }: RouteParams
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
+    await connectToDatabase();
     const taskId = params.id;
     console.log('API: Updating task with ID:', taskId);
-    await connectToDatabase();
 
-    const body = await req.json();
+    const body = await request.json();
     console.log('API: Request body:', body);
 
     // Update the task
@@ -77,12 +71,12 @@ export async function PUT(
 
 // DELETE /api/tasks/[id] - Delete a task
 export async function DELETE(
-  req: NextRequest,
-  { params }: RouteParams
+  request: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
-    const taskId = params.id;
     await connectToDatabase();
+    const taskId = params.id;
 
     const deletedTask = await Task.findOneAndDelete({ id: taskId });
 

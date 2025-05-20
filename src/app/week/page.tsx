@@ -1,14 +1,19 @@
 'use client';
 
-import React, { useMemo, useCallback, useState } from 'react';
+import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { useTaskContext, useMilestoneContext } from '@/context';
 import { isInWeek, getCurrentDate } from '@/utils/dateUtils';
 import TaskForm from '@/components/tasks/TaskForm';
 import { getMilestonesForWeek, getAllWeekNumbers } from '@/utils/dataLoader';
-import { StrictDragDropContext, StrictDroppable, StrictDraggable, DropResult } from '@/components/dnd/DragDropWrapper';
+import { StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
 import { useDragAndDrop } from '@/hooks/useDragAndDrop';
 import { addDays, format, parseISO } from 'date-fns';
 import { Task } from '@/types';
+import '@/styles/dnd.css';
+import DragHandleIcon from '@/components/dnd/DragHandleIcon';
+import DragDropProvider, { DndContext } from '@/components/dnd/DragDropProvider';
+import SimpleDraggableTaskItem from '@/components/tasks/SimpleDraggableTaskItem';
+import SimpleDroppableContainer from '@/components/tasks/SimpleDroppableContainer';
 
 // Helper function to calculate week info (moved outside component to avoid Hook issues)
 // Using May 12, 2025 (Monday) as the reference point for Week 1
@@ -233,45 +238,24 @@ export default function WeekPage() {
     return getMilestonesForWeek(weekNumber, milestones);
   }, [weekNumber, milestones]);
 
-  // Use our custom hook for drag and drop
-  const { handlers: dndHandlers } = useDragAndDrop((result: DropResult) => {
-    // If there's no destination or the drag was cancelled, return early
-    if (!result.destination) {
-      console.log('No destination, drag cancelled');
-      return;
-    }
-
-    const { draggableId, source, destination } = result;
-
-    // If the task was dropped in the same day, do nothing
-    if (source.droppableId === destination.droppableId) {
-      console.log('Dropped in same day, no action needed');
-      return;
-    }
-
-    console.log('Drag result:', result);
+  // Function to handle task movement between days
+  const handleTaskMoved = useCallback((taskId: string, destinationContainerId: string) => {
+    console.log(`Task ${taskId} moved to ${destinationContainerId}`);
 
     // Get the task that was moved
-    const task = weekTasks.find(t => t.id === draggableId);
+    const task = weekTasks.find(t => t.id === taskId);
     if (!task) {
-      console.error('Task not found:', draggableId);
+      console.error('Task not found:', taskId);
       return;
     }
 
     try {
-      // Extract the source and destination dates from the droppable IDs
+      // Extract date string from the destination container ID
       // Format: day-YYYY-MM-DD
-      const sourceId = source.droppableId;
-      const destId = destination.droppableId;
-
-      console.log('Source ID:', sourceId);
-      console.log('Destination ID:', destId);
-
-      // Extract date strings from the droppable IDs
-      const destDateStr = destId.split('day-')[1];
+      const destDateStr = destinationContainerId.split('day-')[1];
 
       if (!destDateStr) {
-        console.error('Invalid destination droppable ID:', destId);
+        console.error('Invalid destination container ID:', destinationContainerId);
         return;
       }
 
@@ -313,7 +297,7 @@ export default function WeekPage() {
 
       // Move the task
       moveTask(
-        draggableId,
+        taskId,
         newStartDate,
         newDueDate,
         weekNumber
@@ -321,10 +305,7 @@ export default function WeekPage() {
     } catch (error) {
       console.error('Error in handleTaskMoved:', error);
     }
-  });
-
-  // Handle task movement between days (for backward compatibility)
-  const handleTaskMoved = useCallback(dndHandlers.onDragEnd, [dndHandlers.onDragEnd]);
+  }, [weekTasks, moveTask, weekNumber]);
 
   // Handle task editing
   const handleEdit = useCallback((task: Task) => {
@@ -337,6 +318,21 @@ export default function WeekPage() {
     setEditingTask(null);
     setIsFormOpen(false);
   }, []);
+
+  // Effect to add event listener for drop events
+  useEffect(() => {
+    const handleSimpleDrop = (e: any) => {
+      const { taskId, containerId } = e.detail;
+      console.log('Simple drop event detected:', e.detail);
+      handleTaskMoved(taskId, containerId);
+    };
+
+    document.addEventListener('simple-drop', handleSimpleDrop);
+
+    return () => {
+      document.removeEventListener('simple-drop', handleSimpleDrop);
+    };
+  }, [handleTaskMoved]);
 
   // Loading state
   if (tasksLoading || milestonesLoading) {
@@ -357,7 +353,7 @@ export default function WeekPage() {
       {/* Jump to section */}
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-space-cadet mb-4">Jump to</h2>
-        <div className="flex items-center">
+        <div className="flex items-center justify-between">
           <select
             value={selectedWeek || weekNumber}
             onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
@@ -370,13 +366,16 @@ export default function WeekPage() {
             ))}
           </select>
           <button
-            onClick={() => setSelectedWeek(parseInt(String(selectedWeek || weekNumber)))}
-            className="ml-2 px-4 py-2 text-white rounded-md"
-            style={{ backgroundColor: '#7E52A0' }}
-            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#29274C' }}
-            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#7E52A0' }}
+            onClick={goToCurrentWeek}
+            className="px-4 py-2 text-white rounded-md flex items-center"
+            style={{ backgroundColor: '#D295BF' }}
+            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#7E52A0' }}
+            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#D295BF' }}
           >
-            Go
+            <span className="mr-2">Today</span>
+            <span className="text-xs text-white px-2 py-1 rounded-full" style={{ backgroundColor: '#29274C' }}>
+              {getCurrentDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+            </span>
           </button>
         </div>
       </div>
@@ -472,20 +471,23 @@ export default function WeekPage() {
       </div>
 
       {/* Date range display */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="mb-4">
         <p className="text-space-cadet/70">{dateRange}</p>
+      </div>
 
+      {/* Add Task button */}
+      <div className="mb-6 flex justify-end">
         <button
-          onClick={goToCurrentWeek}
-          className="px-4 py-2 text-white rounded-md flex items-center"
-          style={{ backgroundColor: '#D295BF' }}
-          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#7E52A0' }}
-          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#D295BF' }}
+          onClick={() => setIsFormOpen(true)}
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-royal-purple"
+          style={{ backgroundColor: '#7E52A0' }}
+          onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#29274C' }}
+          onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#7E52A0' }}
         >
-          <span className="mr-2">Today</span>
-          <span className="text-xs text-white px-2 py-1 rounded-full" style={{ backgroundColor: '#29274C' }}>
-            {getCurrentDate().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-          </span>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          Add Task
         </button>
       </div>
 
@@ -574,11 +576,7 @@ export default function WeekPage() {
           {/* Weekly Tasks View */}
           {activeView === 'weeks' && (
             <div className="space-y-4">
-              <StrictDragDropContext
-                onDragEnd={handleTaskMoved}
-                onDragStart={dndHandlers.onDragStart}
-                onDragUpdate={(update) => console.log('Drag update:', update)}
-              >
+              <div className="drag-drop-container">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
@@ -602,93 +600,34 @@ export default function WeekPage() {
                               <div className="text-sm text-white/80">{dayDate}</div>
                             </td>
                             <td className="py-3 px-4">
-                              <StrictDroppable droppableId={`day-${dayKey}`} direction="horizontal" isDropDisabled={false}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.droppableProps}
-                                    className={`flex flex-wrap gap-3 min-h-[80px] p-3 rounded-md droppable-container ${snapshot.isDraggingOver ? 'is-over' : ''}`}
-                                    style={{
-                                      minWidth: '500px',
-                                      transition: 'background-color 0.2s',
-                                      backgroundColor: snapshot.isDraggingOver ? 'rgba(210, 149, 191, 0.3)' : 'transparent',
-                                      border: snapshot.isDraggingOver ? '2px dashed #7E52A0' : '2px dashed transparent'
-                                    }}
-                                  >
-                                    {dayTasks.length === 0 ? (
-                                      <p className="text-space-cadet/50 py-2 text-sm flex items-center">
-                                        <span className="mr-2">No tasks for this day</span>
-                                        <span className="text-xs text-space-cadet/70" title="Drop tasks here">
-                                          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                                          </svg>
-                                        </span>
-                                      </p>
-                                    ) : (
-                                      dayTasks.map((task, index) => (
-                                        <StrictDraggable key={task.id} draggableId={task.id} index={index}>
-                                          {(provided, snapshot) => (
-                                            <div
-                                              ref={provided.innerRef}
-                                              {...provided.draggableProps}
-                                              {...provided.dragHandleProps}
-                                              className={`p-3 rounded-lg shadow-sm border task-item ${task.completed ? 'border-green-300' : 'border-space-cadet/30'} ${snapshot.isDragging ? 'dragging' : ''}`}
-                                              title="Drag to move to another day"
-                                              style={{
-                                                backgroundColor: snapshot.isDragging ? '#D295BF' : '#C2AFF0',
-                                                width: '220px',
-                                                transition: 'transform 0.2s, box-shadow 0.2s',
-                                                boxShadow: snapshot.isDragging ? '0 8px 16px rgba(0, 0, 0, 0.2)' : '0 2px 4px rgba(0, 0, 0, 0.1)',
-                                                transform: snapshot.isDragging ? 'scale(1.05)' : 'scale(1)',
-                                                zIndex: snapshot.isDragging ? 9999 : 1,
-                                                ...provided.draggableProps.style
-                                              }}
-                                            >
-                                              <div className="flex items-start justify-between">
-                                                <div className="flex items-start space-x-2">
-                                                  <input
-                                                    type="checkbox"
-                                                    checked={task.completed}
-                                                    onChange={() => toggleTaskCompletion(task.id)}
-                                                    className="h-4 w-4 mt-1 text-royal-purple rounded focus:ring-royal-purple"
-                                                  />
-                                                  <div>
-                                                    <div className="flex items-center">
-                                                      <h3 className={`text-sm font-medium ${task.completed ? 'line-through text-gray-500' : 'text-space-cadet'}`}>
-                                                        {task.title}
-                                                      </h3>
-                                                      <span className="ml-2 text-xs text-space-cadet/70" title="Drag to move">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                                                        </svg>
-                                                      </span>
-                                                    </div>
-                                                    <div className="mt-1 flex items-center space-x-1">
-                                                      <span className="text-xs text-space-cadet/70">
-                                                        {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
-                                                      </span>
-                                                    </div>
-                                                  </div>
-                                                </div>
-                                                <button
-                                                  onClick={() => handleEdit(task)}
-                                                  className="text-space-cadet/60 hover:text-royal-purple ml-1"
-                                                  aria-label="Edit task"
-                                                >
-                                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                  </svg>
-                                                </button>
-                                              </div>
-                                            </div>
-                                          )}
-                                        </StrictDraggable>
-                                      ))
-                                    )}
-                                    {provided.placeholder}
-                                  </div>
+                              <SimpleDroppableContainer
+                                id={`day-${dayKey}`}
+                                className="flex flex-wrap gap-3 rounded-md droppable-container"
+                                style={{
+                                  minWidth: '500px'
+                                }}
+                              >
+                                {dayTasks.length === 0 ? (
+                                  <p className="text-space-cadet/50 py-2 text-sm flex items-center">
+                                    <span className="mr-2">No tasks for this day</span>
+                                    <span className="text-xs text-space-cadet/70" title="Drop tasks here">
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                                      </svg>
+                                    </span>
+                                  </p>
+                                ) : (
+                                  dayTasks.map((task, index) => (
+                                    <SimpleDraggableTaskItem
+                                      key={task.id}
+                                      task={task}
+                                      index={index}
+                                      onEdit={handleEdit}
+                                      onToggleCompletion={toggleTaskCompletion}
+                                    />
+                                  ))
                                 )}
-                              </StrictDroppable>
+                              </SimpleDroppableContainer>
                             </td>
                           </tr>
                         );
@@ -696,7 +635,7 @@ export default function WeekPage() {
                     </tbody>
                   </table>
                 </div>
-              </StrictDragDropContext>
+              </div>
 
               {Object.values(tasksByDay).every(tasks => tasks.length === 0) && (
                 <div className="rounded-lg shadow-sm border border-space-cadet/30 p-6 text-center" style={{ backgroundColor: '#C2AFF0' }}>
@@ -709,12 +648,14 @@ export default function WeekPage() {
                 <TaskForm
                   task={editingTask}
                   onClose={handleCloseForm}
+                  defaultWeekNumber={weekNumber}
+                  defaultDate={weekDays[0] ? format(weekDays[0], 'yyyy-MM-dd') : undefined}
                 />
               )}
             </div>
           )}
         </div>
-      </div>
+      </div >
     </div >
   );
 }

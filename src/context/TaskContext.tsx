@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import { Task } from '@/types';
 import { generateId } from '@/utils/idUtils';
+import { useToast } from '@/components/ui/Toast';
 
 // Define the state type
 interface TaskState {
@@ -125,6 +126,7 @@ const taskReducer = (state: TaskState, action: TaskAction): TaskState => {
 // Provider component
 export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [state, dispatch] = useReducer(taskReducer, initialState);
+  const { addToast } = useToast();
 
   // Load tasks from MongoDB API on initial render
   useEffect(() => {
@@ -160,27 +162,35 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         updatedAt: new Date().toISOString(),
       };
 
+      // First update the UI for immediate feedback
+      dispatch({ type: 'ADD_TASK', payload: task });
+
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(newTask),
+        cache: 'no-cache',
       });
 
       if (!response.ok) {
         throw new Error('Failed to add task');
       }
 
-      const savedTask = await response.json();
-      dispatch({ type: 'ADD_TASK', payload: task });
+      await response.json(); // Get response but we don't need to use it
+      addToast('Task added successfully', 'success');
     } catch (error) {
       console.error('Error adding task:', error);
+      addToast('Failed to save task to database', 'error');
     }
   };
 
   const updateTask = async (task: Task) => {
     try {
+      // First update the UI for immediate feedback
+      dispatch({ type: 'UPDATE_TASK', payload: task });
+
       const response = await fetch(`/api/tasks/${task.id}`, {
         method: 'PUT',
         headers: {
@@ -190,31 +200,34 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ...task,
           updatedAt: new Date().toISOString(),
         }),
+        cache: 'no-cache',
       });
 
       if (!response.ok) {
         throw new Error('Failed to update task');
       }
-
-      dispatch({ type: 'UPDATE_TASK', payload: task });
     } catch (error) {
       console.error('Error updating task:', error);
+      addToast('Failed to update task in database', 'error');
     }
   };
 
   const deleteTask = async (id: string) => {
     try {
+      // First update the UI for immediate feedback
+      dispatch({ type: 'DELETE_TASK', payload: id });
+
       const response = await fetch(`/api/tasks/${id}`, {
         method: 'DELETE',
+        cache: 'no-cache',
       });
 
       if (!response.ok) {
         throw new Error('Failed to delete task');
       }
-
-      dispatch({ type: 'DELETE_TASK', payload: id });
     } catch (error) {
       console.error('Error deleting task:', error);
+      addToast('Failed to delete task from database', 'error');
     }
   };
 
@@ -226,6 +239,9 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       if (!task) {
         throw new Error('Task not found');
       }
+
+      // First update the UI for immediate feedback
+      dispatch({ type: 'TOGGLE_TASK_COMPLETION', payload: id });
 
       // Update the task with toggled completion
       const updatedTask = {
@@ -240,15 +256,15 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(updatedTask),
+        cache: 'no-cache',
       });
 
       if (!response.ok) {
         throw new Error('Failed to toggle task completion');
       }
-
-      dispatch({ type: 'TOGGLE_TASK_COMPLETION', payload: id });
     } catch (error) {
       console.error('Error toggling task completion:', error);
+      addToast('Failed to update task completion status in database', 'error');
     }
   };
 
@@ -259,60 +275,82 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     newDueDate: string,
     newWeekNumber: number
   ) => {
-    try {
-      console.log('Moving task:', { taskId, newStartDate, newDueDate, newWeekNumber });
+    console.log('Moving task:', { taskId, newStartDate, newDueDate, newWeekNumber });
 
-      // Find the task to move
-      const task = state.tasks.find((t) => t.id === taskId);
+    // Find the task to move
+    const task = state.tasks.find((t) => t.id === taskId);
 
-      if (!task) {
-        throw new Error('Task not found');
+    if (!task) {
+      console.error('Task not found:', taskId);
+      addToast(`Task not found: ${taskId}`, 'error');
+      return;
+    }
+
+    console.log('Original task:', task);
+
+    // Update the task with new dates and week number
+    const updatedTask = {
+      ...task,
+      startDate: newStartDate,
+      dueDate: newDueDate,
+      weekNumber: newWeekNumber,
+      updatedAt: new Date().toISOString(),
+    };
+
+    console.log('Updated task to be sent to API:', updatedTask);
+
+    // First update the UI state for immediate feedback
+    dispatch({
+      type: 'MOVE_TASK',
+      payload: { taskId, newStartDate, newDueDate, newWeekNumber },
+    });
+
+    // Then try to update the database
+    const maxRetries = 2;
+    let retryCount = 0;
+    let success = false;
+
+    while (retryCount <= maxRetries && !success) {
+      try {
+        const response = await fetch(`/api/tasks/${taskId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(updatedTask),
+          // Add cache control to prevent caching issues
+          cache: 'no-cache',
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`API error response (attempt ${retryCount + 1}/${maxRetries + 1}):`, errorText);
+          throw new Error(`Failed to move task: ${response.status} ${errorText}`);
+        }
+
+        const responseData = await response.json();
+        console.log('API response after moving task:', responseData);
+        success = true;
+        console.log('Task successfully moved in state and database');
+
+        // Show success toast only on the first successful attempt
+        if (retryCount > 0) {
+          addToast('Task moved successfully after retry', 'success');
+        }
+      } catch (error) {
+        console.error(`Error moving task (attempt ${retryCount + 1}/${maxRetries + 1}):`, error);
+        retryCount++;
+
+        if (retryCount <= maxRetries) {
+          console.log(`Retrying... (${retryCount}/${maxRetries})`);
+          // Wait before retrying (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * retryCount));
+        } else {
+          console.error('All retry attempts failed. Task was updated in UI but not in database.');
+          // Show error toast only after all retries have failed
+          addToast('Task moved in UI but failed to update in database. Changes may not persist after reload.', 'error');
+        }
       }
-
-      console.log('Original task:', task);
-
-      // Update the task with new dates and week number
-      const updatedTask = {
-        ...task,
-        startDate: newStartDate,
-        dueDate: newDueDate,
-        weekNumber: newWeekNumber,
-        updatedAt: new Date().toISOString(),
-      };
-
-      console.log('Updated task to be sent to API:', updatedTask);
-
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(updatedTask),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('API error response:', errorText);
-        throw new Error(`Failed to move task: ${response.status} ${errorText}`);
-      }
-
-      const responseData = await response.json();
-      console.log('API response after moving task:', responseData);
-
-      dispatch({
-        type: 'MOVE_TASK',
-        payload: { taskId, newStartDate, newDueDate, newWeekNumber },
-      });
-
-      // Log the updated state after dispatch
-      setTimeout(() => {
-        const updatedTask = state.tasks.find((t) => t.id === taskId);
-        console.log('Updated task in state after dispatch:', updatedTask);
-      }, 0);
-
-      console.log('Task successfully moved in state and database');
-    } catch (error) {
-      console.error('Error moving task:', error);
     }
   };
 
