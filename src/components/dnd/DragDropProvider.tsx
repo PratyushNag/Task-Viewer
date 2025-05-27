@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { DragDropContext } from 'react-beautiful-dnd';
 import '@/utils/dndPolyfill';
 import '@/utils/dndStorePolyfill';
@@ -60,31 +60,26 @@ const DragDropProvider: React.FC<DragDropProviderProps> = ({
   // Set up a unique ID for this context
   const [contextId] = useState(() => `dnd-context-${Math.random().toString(36).substring(2, 9)}`);
 
-  if (!isClient) {
-    // Return a placeholder with the same structure to avoid layout shifts
-    return <div>{children}</div>;
-  }
-
-  // Handle drag events with detailed logging
-  const handleDragStart = (start: any) => {
+  // Handle drag events with detailed logging - use useCallback to prevent unnecessary re-renders
+  const handleDragStart = useCallback((start: any) => {
     try {
       console.log('DragDropProvider: handleDragStart', start);
       onDragStart(start);
     } catch (error) {
       console.error('Error in onDragStart handler:', error);
     }
-  };
+  }, [onDragStart]);
 
-  const handleDragUpdate = (update: any) => {
+  const handleDragUpdate = useCallback((update: any) => {
     try {
       console.log('DragDropProvider: handleDragUpdate', update);
       onDragUpdate(update);
     } catch (error) {
       console.error('Error in onDragUpdate handler:', error);
     }
-  };
+  }, [onDragUpdate]);
 
-  const handleDragEnd = (result: any) => {
+  const handleDragEnd = useCallback((result: any) => {
     try {
       console.log('DragDropProvider: handleDragEnd', result);
       // Log detailed information about the drag operation
@@ -97,14 +92,30 @@ const DragDropProvider: React.FC<DragDropProviderProps> = ({
       } else {
         console.log('Drag cancelled or no valid destination');
       }
+
+      // Call the original handler
       onDragEnd(result);
+
+      // Force cleanup after a short delay to ensure react-beautiful-dnd has finished
+      setTimeout(() => {
+        console.log('🧹 DragDropProvider: Triggering cleanup after drag end');
+        // Import and call cleanup function
+        import('@/utils/dragCleanup').then(({ cleanupAllDragStates }) => {
+          cleanupAllDragStates();
+        });
+      }, 100);
+
     } catch (error) {
       console.error('Error in onDragEnd handler:', error);
     }
-  };
+  }, [onDragEnd]);
 
-  // Add a useEffect to log when the provider is mounted
+  // Add a useEffect to log when the provider is mounted - ALWAYS call this hook
   useEffect(() => {
+    if (!isClient) {
+      return; // Don't set up event listeners if not on client
+    }
+
     console.log('DragDropProvider mounted with context ID:', contextId);
 
     // Listen for fallback drop events
@@ -120,7 +131,13 @@ const DragDropProvider: React.FC<DragDropProviderProps> = ({
       console.log('DragDropProvider unmounted');
       document.removeEventListener('fallback-drop', handleFallbackDrop);
     };
-  }, [contextId]);
+  }, [contextId, isClient, handleDragEnd]);
+
+  // Early return AFTER all hooks have been called
+  if (!isClient) {
+    // Return a placeholder with the same structure to avoid layout shifts
+    return <div>{children}</div>;
+  }
 
   return (
     <DndContext.Provider value={true}>

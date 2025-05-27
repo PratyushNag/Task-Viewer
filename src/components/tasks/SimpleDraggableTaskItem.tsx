@@ -2,8 +2,11 @@
 
 import React, { useRef, useState, useEffect } from 'react';
 import { Task } from '@/types';
+import { isTaskOverdue, getTaskBorderClasses, getOverdueTextClasses } from '@/utils/taskUtils';
+import { formatDate } from '@/utils/dateUtils';
 import DragHandleIcon from '@/components/dnd/DragHandleIcon';
 import TouchDragManager from '@/utils/TouchDragManager';
+import { cleanupElementDragState, cleanupTaskItemDragState } from '@/utils/dragCleanup';
 
 interface SimpleDraggableTaskItemProps {
   task: Task;
@@ -50,6 +53,14 @@ const SimpleDraggableTaskItem: React.FC<SimpleDraggableTaskItemProps> = ({
         onDragEnd: (dragId, x, y, dropTarget) => {
           console.log('Touch drag ended for task:', dragId);
           setIsDragging(false);
+
+          // Use the cleanup utility for thorough cleanup
+          if (taskItemRef.current) {
+            cleanupElementDragState(taskItemRef.current);
+          }
+
+          // Also cleanup by task ID to catch any other instances
+          cleanupTaskItemDragState(task.id);
 
           if (dropTarget) {
             // Get the container ID from the drop target
@@ -127,6 +138,19 @@ const SimpleDraggableTaskItem: React.FC<SimpleDraggableTaskItemProps> = ({
   const handleDragEnd = (e: React.DragEvent<HTMLDivElement>) => {
     console.log('Drag end for task:', task.id);
     setIsDragging(false);
+
+    // Use the cleanup utility for thorough cleanup
+    if (taskItemRef.current) {
+      cleanupElementDragState(taskItemRef.current);
+    }
+
+    // Also cleanup by task ID to catch any other instances
+    cleanupTaskItemDragState(task.id);
+
+    // Also cleanup drag handle classes
+    if (dragHandleRef.current) {
+      dragHandleRef.current.classList.remove('dragging-active');
+    }
   };
 
   // Handle mouse down on drag handle
@@ -153,17 +177,22 @@ const SimpleDraggableTaskItem: React.FC<SimpleDraggableTaskItemProps> = ({
     // Remove the dragging class
     e.currentTarget.classList.remove('dragging-active');
 
-    // Find the task item element
+    // Find the task item element and use cleanup utility
     const taskItem = e.currentTarget.closest('.task-item') as HTMLElement;
     if (taskItem) {
-      taskItem.classList.remove('being-dragged');
+      cleanupElementDragState(taskItem);
     }
+
+    // Also cleanup by task ID
+    cleanupTaskItemDragState(task.id);
   };
+
+  const isOverdue = isTaskOverdue(task);
 
   return (
     <div
       ref={taskItemRef}
-      className={`p-3 rounded-lg shadow-sm border task-item ${task.completed ? 'border-green-300' : 'border-space-cadet/30'
+      className={`p-3 rounded-lg shadow-sm border task-item ${task.completed ? 'border-green-300' : getTaskBorderClasses(task, 'border-space-cadet/30')
         } ${isDragging ? 'opacity-50' : ''}`}
       onClick={handleTaskClick}
       style={{
@@ -211,13 +240,17 @@ const SimpleDraggableTaskItem: React.FC<SimpleDraggableTaskItemProps> = ({
                 <DragHandleIcon className="h-5 w-5" />
               </span>
             </div>
-            {task.priority && (
-              <div className="mt-1 flex items-center space-x-1">
-                <span className="text-xs text-space-cadet/70">
+            <div className="mt-1 flex items-center space-x-2">
+              {task.priority && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-space-cadet/20 text-space-cadet">
                   {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
                 </span>
-              </div>
-            )}
+              )}
+              <span className={`text-xs ${getOverdueTextClasses(task, 'text-space-cadet/70')}`}>
+                {isOverdue ? 'Overdue: ' : 'Due: '}
+                {formatDate(task.dueDate)}
+              </span>
+            </div>
           </div>
         </div>
       </div>

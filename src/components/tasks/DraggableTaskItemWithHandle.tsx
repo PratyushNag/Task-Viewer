@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Task } from '@/types';
+import { isTaskOverdue, getTaskBorderClasses } from '@/utils/taskUtils';
 import { StrictDraggable } from '@/components/dnd/DragDropWrapper';
 import DragHandleIcon from '@/components/dnd/DragHandleIcon';
 
@@ -76,7 +77,7 @@ const DraggableTaskItemWithHandle: React.FC<DraggableTaskItemWithHandleProps> = 
             ref={provided.innerRef}
             // Only apply draggableProps, NOT dragHandleProps here
             {...provided.draggableProps}
-            className={`p-3 rounded-lg shadow-sm border task-item ${task.completed ? 'border-green-300' : 'border-space-cadet/30'
+            className={`p-3 rounded-lg shadow-sm border task-item ${task.completed ? 'border-green-300' : getTaskBorderClasses(task, 'border-space-cadet/30')
               } ${snapshot.isDragging ? 'dragging' : ''}`}
             onClick={handleTaskClick}
             style={{

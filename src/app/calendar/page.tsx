@@ -7,6 +7,7 @@ import moment from 'moment';
 import { useTaskContext, useMilestoneContext } from '@/context';
 import { Task, Milestone } from '@/types';
 import { getWeekStartDate, getCurrentDate } from '@/utils/dateUtils';
+import { getCalendarEventColor, isTaskOverdue } from '@/utils/taskUtils';
 
 // Setup the localizer for react-big-calendar
 const localizer = momentLocalizer(moment);
@@ -134,23 +135,12 @@ export default function CalendarPage() {
 
     if (event.type === 'task') {
       const task = event.resource as Task;
-      if (task.completed) {
-        style.backgroundColor = '#9CA3AF'; // Gray for completed tasks
-      } else {
-        // Color based on priority
-        switch (task.priority) {
-          case 'high':
-            style.backgroundColor = '#EF4444'; // Red for high priority
-            break;
-          case 'medium':
-            style.backgroundColor = '#F59E0B'; // Yellow for medium priority
-            break;
-          case 'low':
-            style.backgroundColor = '#3B82F6'; // Blue for low priority
-            break;
-          default:
-            style.backgroundColor = '#3B82F6';
-        }
+      style.backgroundColor = getCalendarEventColor(task);
+
+      // Add special styling for overdue tasks
+      if (isTaskOverdue(task)) {
+        style.border = '2px solid #DC2626'; // Darker red border for overdue tasks
+        style.fontWeight = 'bold';
       }
     } else {
       // Milestone styling
@@ -198,11 +188,11 @@ export default function CalendarPage() {
         <p className="text-gray-600 mt-2">View all your tasks and milestones</p>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex flex-wrap gap-2 mb-4">
+      <div className="bg-white rounded-lg shadow p-2 sm:p-4">
+        <div className="flex flex-wrap gap-2 mb-4 justify-center sm:justify-start">
           <button
             onClick={() => setView(Views.MONTH)}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${view === Views.MONTH
+            className={`px-3 sm:px-4 py-2 rounded-md text-sm font-medium min-h-[44px] ${view === Views.MONTH
               ? 'bg-lilac text-white'
               : 'text-gray-700 hover:bg-space-cadet hover:text-white'
               }`}
@@ -211,7 +201,7 @@ export default function CalendarPage() {
           </button>
           <button
             onClick={() => setView(Views.WEEK)}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${view === Views.WEEK
+            className={`px-3 sm:px-4 py-2 rounded-md text-sm font-medium min-h-[44px] ${view === Views.WEEK
               ? 'bg-lilac text-white'
               : 'text-gray-700 hover:bg-space-cadet hover:text-white'
               }`}
@@ -220,7 +210,7 @@ export default function CalendarPage() {
           </button>
           <button
             onClick={() => setView(Views.DAY)}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${view === Views.DAY
+            className={`px-3 sm:px-4 py-2 rounded-md text-sm font-medium min-h-[44px] ${view === Views.DAY
               ? 'bg-lilac text-white'
               : 'text-gray-700 hover:bg-space-cadet hover:text-white'
               }`}
@@ -229,7 +219,7 @@ export default function CalendarPage() {
           </button>
         </div>
 
-        <div className="h-[600px] max-w-full overflow-x-auto">
+        <div className="h-[400px] sm:h-[500px] md:h-[600px] max-w-full overflow-x-auto">
           <Calendar
             localizer={localizer}
             events={events}

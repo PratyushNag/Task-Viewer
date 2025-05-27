@@ -126,8 +126,7 @@ export const isPast = (date: Date | string): boolean => {
 
 /**
  * Get the current date
- * Previously used a hardcoded date (May 11, 2025) for testing purposes
- * Now returns the actual current date
+ * Returns the actual current date for production use
  */
 export const getCurrentDate = (): Date => {
   // Return the actual current date
@@ -208,6 +207,21 @@ export const getDeadlineColor = (dueDate: Date | string): string => {
   } else {
     return 'text-green-600 bg-green-100'; // Due later
   }
+};
+
+/**
+ * Get the current week number based on our custom week numbering system
+ * Using May 12, 2025 (Monday) as the reference point for Week 1
+ */
+export const getCurrentWeekNumber = (): number => {
+  const today = getCurrentDate();
+
+  // Calculate the current week number based on our reference date (May 12, 2025)
+  const referenceDate = new Date(2025, 4, 12); // May 12, 2025
+  const daysSinceReference = Math.floor((today.getTime() - referenceDate.getTime()) / (1000 * 60 * 60 * 24));
+  const currentWeekNumber = Math.max(1, Math.floor(daysSinceReference / 7) + 1);
+
+  return currentWeekNumber;
 };
 
 /**

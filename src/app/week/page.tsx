@@ -2,9 +2,10 @@
 
 import React, { useMemo, useCallback, useState, useEffect } from 'react';
 import { useTaskContext, useMilestoneContext } from '@/context';
-import { isInWeek, getCurrentDate } from '@/utils/dateUtils';
+import { isInWeek, getCurrentDate, getCurrentWeekNumber } from '@/utils/dateUtils';
 import TaskForm from '@/components/tasks/TaskForm';
 import { getMilestonesForWeek, getAllWeekNumbers } from '@/utils/dataLoader';
+import { generateOverdueRolloverTasks } from '@/utils/taskUtils';
 import { StrictDroppable, DropResult } from '@/components/dnd/DragDropWrapper';
 import { useDragAndDrop } from '@/hooks/useDragAndDrop';
 import { addDays, format, parseISO } from 'date-fns';
@@ -12,8 +13,11 @@ import { Task } from '@/types';
 import '@/styles/dnd.css';
 import DragHandleIcon from '@/components/dnd/DragHandleIcon';
 import DragDropProvider, { DndContext } from '@/components/dnd/DragDropProvider';
+import { getPhaseForWeek } from '@/utils/phaseUtils';
 import SimpleDraggableTaskItem from '@/components/tasks/SimpleDraggableTaskItem';
 import SimpleDroppableContainer from '@/components/tasks/SimpleDroppableContainer';
+import MobileWeekView from '@/components/mobile/MobileWeekView';
+import { cleanupAllDragStates } from '@/utils/dragCleanup';
 
 // Helper function to calculate week info (moved outside component to avoid Hook issues)
 // Using May 12, 2025 (Monday) as the reference point for Week 1
@@ -63,7 +67,7 @@ const calculateWeekInfo = (weekNum?: number) => {
 
 export default function WeekPage() {
   // Context and state
-  const { state: { tasks, loading: tasksLoading }, moveTask, toggleTaskCompletion } = useTaskContext();
+  const { state: { tasks, loading: tasksLoading }, moveTask, moveTaskVisually, toggleTaskCompletion } = useTaskContext();
   const { state: { milestones, loading: milestonesLoading } } = useMilestoneContext();
   const [selectedWeek, setSelectedWeek] = useState<number | null>(null);
   const [activeView, setActiveView] = useState<'milestones' | 'weeks'>('weeks');
@@ -99,24 +103,52 @@ export default function WeekPage() {
     });
   }, [getWeekInfo, availableWeeks]);
 
-  // Filter tasks for the selected week
+  // Filter tasks for the selected week including rollover tasks
   const weekTasks = useMemo(() => {
+    // Get current week number for rollover calculation
+    const currentWeekNumber = getCurrentWeekNumber();
+
+    // Generate rollover tasks for overdue items
+    const rolloverTasks = generateOverdueRolloverTasks(tasks, currentWeekNumber, 10);
+
+    // Filter original tasks for this week
+    let originalWeekTasks: Task[] = [];
+
     // First try to filter by weekNumber if available
     const tasksWithWeekNumber = tasks.filter(task => 'weekNumber' in task);
     if (tasksWithWeekNumber.length > 0) {
       // Filter tasks by week number
-      return tasksWithWeekNumber.filter(task => task.weekNumber === weekNumber);
+      originalWeekTasks = tasksWithWeekNumber.filter(task => task.weekNumber === weekNumber);
+    } else {
+      // Fallback to date-based filtering if no week numbers are available
+      originalWeekTasks = tasks.filter(task => {
+        // Check if the task's start date is in this week
+        if (task.startDate) {
+          return isInWeek(task.startDate, weekNumber);
+        }
+        // Otherwise check the due date
+        return isInWeek(task.dueDate, weekNumber);
+      });
     }
 
-    // Fallback to date-based filtering if no week numbers are available
-    return tasks.filter(task => {
-      // Check if the task's start date is in this week
-      if (task.startDate) {
-        return isInWeek(task.startDate, weekNumber);
-      }
-      // Otherwise check the due date
-      return isInWeek(task.dueDate, weekNumber);
+    // Filter rollover tasks for this specific week
+    const weekRolloverTasks = rolloverTasks.filter(rolloverTask => {
+      const rolloverWeekNumber = rolloverTask.visualWeekNumber || rolloverTask.weekNumber;
+      return rolloverWeekNumber === weekNumber;
     });
+
+    // Combine original tasks with rollover tasks
+    const allWeekTasks = [...originalWeekTasks, ...weekRolloverTasks];
+
+    console.log(`Week ${weekNumber} tasks:`, {
+      originalTasks: originalWeekTasks.length,
+      rolloverTasks: weekRolloverTasks.length,
+      total: allWeekTasks.length,
+      rolloverTaskIds: weekRolloverTasks.map(t => t.id),
+      rolloverTaskTitles: weekRolloverTasks.map(t => t.title)
+    });
+
+    return allWeekTasks;
   }, [tasks, weekNumber]);
 
 
@@ -149,17 +181,21 @@ export default function WeekPage() {
       // Determine which date to use for grouping
       let displayDate;
 
-      if (task.startDate) {
+      // For rollover tasks, use visual start date if available
+      if (task.visualStartDate) {
+        displayDate = new Date(task.visualStartDate);
+      } else if (task.startDate) {
         // Use startDate if available
         displayDate = new Date(task.startDate);
-      } else if (task.category && task.weekNumber) {
+      } else if (task.category && (task.weekNumber || task.visualWeekNumber)) {
         // If no startDate but has category and weekNumber, distribute based on category
         // Calculate the Monday of the task's week using our reference date
         const referenceDate = new Date(2025, 4, 12); // May 12, 2025 (Monday) - Week 1
 
-        // Calculate the Monday of the task's week
+        // Calculate the Monday of the task's week (use visual week for rollover tasks)
+        const taskWeekNumber = task.visualWeekNumber || task.weekNumber || weekNumber;
         const weekStartDate = new Date(referenceDate);
-        weekStartDate.setDate(referenceDate.getDate() + (task.weekNumber - 1) * 7);
+        weekStartDate.setDate(referenceDate.getDate() + (taskWeekNumber - 1) * 7);
 
         // Add day offset based on category
         let dayOffset = 0;
@@ -293,19 +329,18 @@ export default function WeekPage() {
         newDueDate = newStartDate;
       }
 
-      console.log('New due date:', newDueDate);
+      console.log('New visual start date:', newStartDate);
 
-      // Move the task
-      moveTask(
+      // Use visual movement to preserve original due dates
+      moveTaskVisually(
         taskId,
-        newStartDate,
-        newDueDate,
-        weekNumber
+        weekNumber,
+        newStartDate
       );
     } catch (error) {
       console.error('Error in handleTaskMoved:', error);
     }
-  }, [weekTasks, moveTask, weekNumber]);
+  }, [weekTasks, moveTaskVisually, weekNumber]);
 
   // Handle task editing
   const handleEdit = useCallback((task: Task) => {
@@ -325,6 +360,12 @@ export default function WeekPage() {
       const { taskId, containerId } = e.detail;
       console.log('Simple drop event detected:', e.detail);
       handleTaskMoved(taskId, containerId);
+
+      // Force cleanup after drop
+      setTimeout(() => {
+        console.log('🧹 Week page: Triggering cleanup after drop');
+        cleanupAllDragStates();
+      }, 150);
     };
 
     document.addEventListener('simple-drop', handleSimpleDrop);
@@ -475,6 +516,8 @@ export default function WeekPage() {
         <p className="text-space-cadet/70">{dateRange}</p>
       </div>
 
+
+
       {/* Add Task button */}
       <div className="mb-6 flex justify-end">
         <button
@@ -492,9 +535,9 @@ export default function WeekPage() {
       </div>
 
       {/* Main content with sidebar */}
-      <div className="flex">
+      <div className="flex flex-col md:flex-row week-main-container">
         {/* Left sidebar with toggle buttons */}
-        <div className="w-48 flex-shrink-0 mr-6">
+        <div className="w-full md:w-48 flex-shrink-0 md:mr-6 week-sidebar">
           <div className="space-y-3">
             <button
               onClick={() => setActiveView('milestones')}
@@ -576,7 +619,15 @@ export default function WeekPage() {
           {/* Weekly Tasks View */}
           {activeView === 'weeks' && (
             <div className="space-y-4">
-              <div className="drag-drop-container">
+              {/* Mobile View */}
+              <MobileWeekView
+                weekDays={weekDays}
+                tasksByDay={tasksByDay}
+                onEditTask={handleEdit}
+              />
+
+              {/* Desktop Table View */}
+              <div className="drag-drop-container hidden md:block">
                 <div className="overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
@@ -650,6 +701,7 @@ export default function WeekPage() {
                   onClose={handleCloseForm}
                   defaultWeekNumber={weekNumber}
                   defaultDate={weekDays[0] ? format(weekDays[0], 'yyyy-MM-dd') : undefined}
+                  defaultPhase={getPhaseForWeek(weekNumber)}
                 />
               )}
             </div>

@@ -15,6 +15,20 @@ module.exports = {
         lilac: '#D295BF',
         'fairy-tale': '#E6BCCD',
       },
+      screens: {
+        'xs': '475px',
+        // => @media (min-width: 475px) { ... }
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+      },
+      minHeight: {
+        '44': '44px', // Minimum touch target size
+      },
+      minWidth: {
+        '44': '44px', // Minimum touch target size
+      },
     },
   },
   plugins: [],

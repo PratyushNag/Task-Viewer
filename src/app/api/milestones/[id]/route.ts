@@ -3,9 +3,9 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Milestone from '@/models/Milestone';
 
 export type RouteParams = {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 };
 
 // GET /api/milestones/[id] - Get a specific milestone
@@ -15,8 +15,9 @@ export async function GET(
 ) {
   try {
     await connectToDatabase();
+    const { id } = await params;
 
-    const milestone = await Milestone.findOne({ id: params.id });
+    const milestone = await Milestone.findOne({ id });
 
     if (!milestone) {
       return NextResponse.json(
@@ -42,12 +43,13 @@ export async function PUT(
 ) {
   try {
     await connectToDatabase();
+    const { id } = await params;
 
     const body = await req.json();
 
     // Update the milestone
     const updatedMilestone = await Milestone.findOneAndUpdate(
-      { id: params.id },
+      { id },
       { ...body, updatedAt: new Date() },
       { new: true, runValidators: true }
     );
@@ -76,8 +78,9 @@ export async function DELETE(
 ) {
   try {
     await connectToDatabase();
+    const { id } = await params;
 
-    const deletedMilestone = await Milestone.findOneAndDelete({ id: params.id });
+    const deletedMilestone = await Milestone.findOneAndDelete({ id });
 
     if (!deletedMilestone) {
       return NextResponse.json(

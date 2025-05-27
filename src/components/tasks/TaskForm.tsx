@@ -4,16 +4,22 @@ import React, { useState, useEffect } from 'react';
 import { Task } from '@/types';
 import { useTaskContext } from '@/context';
 import { formatDate, getCurrentDate } from '@/utils/dateUtils';
+import { getPhaseForWeek, getPhaseName } from '@/utils/phaseUtils';
 
 interface TaskFormProps {
   task?: Task | null;
   onClose: () => void;
   defaultDate?: string;
   defaultWeekNumber?: number;
+  defaultPhase?: number;
 }
 
-const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, defaultWeekNumber }) => {
+const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, defaultWeekNumber, defaultPhase }) => {
   const { addTask, updateTask } = useTaskContext();
+
+  // Calculate phase from week number if not provided
+  const calculatedPhase = defaultPhase ?? (defaultWeekNumber ? getPhaseForWeek(defaultWeekNumber) : 1);
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -22,11 +28,13 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
     priority: 'medium',
     weekNumber: defaultWeekNumber || 1,
     category: '',
+    phase: calculatedPhase,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (task) {
+      const taskPhase = task.phase ?? (task.weekNumber ? getPhaseForWeek(task.weekNumber) : calculatedPhase);
       setFormData({
         title: task.title,
         description: task.description || '',
@@ -35,9 +43,10 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
         priority: task.priority,
         weekNumber: task.weekNumber || defaultWeekNumber || 1,
         category: task.category || '',
+        phase: taskPhase,
       });
     }
-  }, [task, defaultWeekNumber]);
+  }, [task, defaultWeekNumber, calculatedPhase]);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -55,10 +64,22 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [name]: value,
+      };
+
+      // Auto-update phase when week number changes
+      if (name === 'weekNumber') {
+        const weekNum = parseInt(value);
+        if (!isNaN(weekNum)) {
+          newData.phase = getPhaseForWeek(weekNum);
+        }
+      }
+
+      return newData;
+    });
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -75,6 +96,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
         priority: formData.priority as 'low' | 'medium' | 'high',
         weekNumber: formData.weekNumber,
         category: formData.category || undefined,
+        phase: formData.phase,
       });
     } else {
       addTask({
@@ -86,6 +108,7 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
         priority: formData.priority as 'low' | 'medium' | 'high',
         weekNumber: formData.weekNumber,
         category: formData.category || undefined,
+        phase: formData.phase,
       });
     }
     onClose();
@@ -253,6 +276,33 @@ const TaskForm: React.FC<TaskFormProps> = ({ task, onClose, defaultDate, default
               className="mt-1 block w-full rounded-lg border-0 px-3 py-2 shadow-md focus:border-royal-purple focus:ring-royal-purple text-sm bg-royal-purple text-black"
               style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
             />
+          </div>
+
+          <div className="mb-3">
+            <label
+              htmlFor="phase"
+              className="block text-sm font-semibold text-black mb-1"
+            >
+              Phase
+            </label>
+            <select
+              id="phase"
+              name="phase"
+              value={formData.phase}
+              onChange={handleChange}
+              className="mt-1 block w-full rounded-lg border-0 px-3 py-2 shadow-md focus:border-royal-purple focus:ring-royal-purple text-sm bg-royal-purple text-black"
+              style={{ boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)' }}
+            >
+              <option value={1}>{getPhaseName(1)}</option>
+              <option value={2}>{getPhaseName(2)}</option>
+              <option value={3}>{getPhaseName(3)}</option>
+              <option value={4}>{getPhaseName(4)}</option>
+              <option value={5}>{getPhaseName(5)}</option>
+              <option value={6}>{getPhaseName(6)}</option>
+            </select>
+            <p className="mt-1 text-xs text-black/70">
+              Auto-updated based on week number
+            </p>
           </div>
           <div className="flex justify-end space-x-3">
             <button

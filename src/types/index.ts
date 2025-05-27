@@ -12,6 +12,9 @@ export interface Task {
   category?: string;
   phase?: number;
   primaryFocus?: string;
+  // Visual positioning properties (separate from actual due dates)
+  visualWeekNumber?: number;
+  visualStartDate?: Date | string;
 }
 
 export interface Milestone {

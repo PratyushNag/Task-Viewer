@@ -80,3 +80,194 @@ body {
 [data-rbd-drag-handle-draggable-id]:active {
   cursor: grabbing;
 }
+
+/* Mobile-first responsive design improvements */
+@media (max-width: 640px) {
+
+  /* Typography scaling for mobile */
+  h1 {
+    font-size: 1.5rem !important;
+    line-height: 2rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+
+  h3 {
+    font-size: 1.125rem !important;
+    line-height: 1.5rem !important;
+  }
+
+  /* Improve button touch targets */
+  button {
+    min-height: 44px !important;
+    min-width: 44px !important;
+    padding: 8px 16px !important;
+  }
+
+  /* Better spacing for mobile */
+  .space-y-8>*+* {
+    margin-top: 1.5rem !important;
+  }
+
+  .space-y-6>*+* {
+    margin-top: 1rem !important;
+  }
+
+  .space-y-4>*+* {
+    margin-top: 0.75rem !important;
+  }
+
+  /* Mobile-friendly form elements */
+  select,
+  input {
+    min-height: 44px !important;
+    font-size: 16px !important;
+    /* Prevents zoom on iOS */
+  }
+
+  /* Improve table responsiveness */
+  table {
+    font-size: 0.875rem !important;
+  }
+
+  th,
+  td {
+    padding: 8px 4px !important;
+  }
+}
+
+/* Tablet responsive adjustments */
+@media (min-width: 641px) and (max-width: 1024px) {
+
+  /* Adjust spacing for tablets */
+  .max-w-7xl {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+  }
+}
+
+/* Calendar responsive improvements */
+@media (max-width: 768px) {
+  .rbc-calendar {
+    font-size: 0.75rem !important;
+  }
+
+  .rbc-toolbar {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+
+  .rbc-toolbar button {
+    padding: 0.5rem 1rem !important;
+    font-size: 0.875rem !important;
+  }
+
+  .rbc-month-view {
+    font-size: 0.75rem !important;
+  }
+
+  .rbc-event {
+    font-size: 0.625rem !important;
+    padding: 1px 2px !important;
+  }
+}
+
+/* Week view mobile improvements */
+@media (max-width: 768px) {
+
+  /* Convert sidebar to mobile-friendly layout */
+  .week-sidebar {
+    width: 100% !important;
+    margin-right: 0 !important;
+    margin-bottom: 1rem !important;
+  }
+
+  .week-sidebar .space-y-3 {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+    overflow-x: auto !important;
+    padding-bottom: 0.5rem !important;
+  }
+
+  .week-sidebar button {
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Stack main content vertically on mobile */
+  .week-main-container {
+    flex-direction: column !important;
+  }
+}
+
+/* Improve touch targets for interactive elements */
+@media (max-width: 768px) {
+
+  /* Links and buttons */
+  a,
+  button {
+    min-height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* Checkbox and radio inputs */
+  input[type="checkbox"],
+  input[type="radio"] {
+    min-width: 20px !important;
+    min-height: 20px !important;
+  }
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 640px) {
+
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+
+  /* Better spacing for cards */
+  .grid {
+    gap: 0.75rem !important;
+  }
+
+  /* Improve milestone cards on mobile */
+  .milestone-card {
+    padding: 1rem !important;
+  }
+
+  /* Better text wrapping */
+  .text-wrap {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+}
+
+/* Improve focus states for accessibility */
+@media (max-width: 768px) {
+
+  button:focus,
+  a:focus,
+  input:focus,
+  select:focus {
+    outline: 2px solid #7E52A0 !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* Smooth transitions for mobile interactions */
+@media (max-width: 768px) {
+  * {
+    transition: background-color 0.2s ease, transform 0.2s ease !important;
+  }
+
+  button:active {
+    transform: scale(0.98) !important;
+  }
+}

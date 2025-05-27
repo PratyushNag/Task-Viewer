@@ -10,6 +10,9 @@
 !.yarn/releases
 !.yarn/versions
 
+dev/
+lovable_dev/
+scripts/
 # testing
 /coverage
 

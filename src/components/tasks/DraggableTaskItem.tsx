@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { Task } from '@/types';
-import { formatDate, isPast } from '@/utils/dateUtils';
+import { formatDate } from '@/utils/dateUtils';
+import { isTaskOverdue, getTaskBorderClasses, getOverdueTextClasses } from '@/utils/taskUtils';
 import { StrictDraggable } from '@/components/dnd/DragDropWrapper';
 import DragHandleIcon from '@/components/dnd/DragHandleIcon';
 
@@ -19,7 +20,7 @@ const DraggableTaskItem: React.FC<DraggableTaskItemProps> = ({ task, index, onEd
     high: 'bg-space-cadet/30 text-space-cadet',
   };
 
-  const isOverdue = !task.completed && isPast(task.dueDate);
+  const isOverdue = isTaskOverdue(task);
 
   console.log(`Rendering DraggableTaskItem for task ${task.id} with index ${index}`);
 
@@ -32,7 +33,7 @@ const DraggableTaskItem: React.FC<DraggableTaskItemProps> = ({ task, index, onEd
             ref={provided.innerRef}
             {...provided.draggableProps}
             {...provided.dragHandleProps}
-            className={`p-4 mb-3 rounded-lg shadow-sm border task-item ${isOverdue ? 'border-red-300' : 'border-space-cadet/30'
+            className={`p-4 mb-3 rounded-lg shadow-sm border task-item ${getTaskBorderClasses(task, 'border-space-cadet/30')
               } ${snapshot.isDragging ? 'dragging' : ''}`}
             style={{
               backgroundColor: snapshot.isDragging ? '#7E52A0' : '#C2AFF0',
@@ -74,7 +75,7 @@ const DraggableTaskItem: React.FC<DraggableTaskItemProps> = ({ task, index, onEd
                           Start: {formatDate(task.startDate)}
                         </span>
                       )}
-                      <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-space-cadet/70'
+                      <span className={`text-xs ${getOverdueTextClasses(task, 'text-space-cadet/70')
                         }`}>
                         {isOverdue ? 'Overdue: ' : 'Due: '}
                         {formatDate(task.dueDate)}
