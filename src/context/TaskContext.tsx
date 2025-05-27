@@ -20,7 +20,8 @@ type TaskAction =
   | { type: 'UPDATE_TASK'; payload: Task }
   | { type: 'DELETE_TASK'; payload: string }
   | { type: 'TOGGLE_TASK_COMPLETION'; payload: string }
-  | { type: 'MOVE_TASK'; payload: { taskId: string; newStartDate: string; newDueDate: string; newWeekNumber: number } };
+  | { type: 'MOVE_TASK'; payload: { taskId: string; newStartDate: string; newDueDate: string; newWeekNumber: number } }
+  | { type: 'MOVE_TASK_VISUALLY'; payload: { taskId: string; newVisualWeekNumber: number; newVisualStartDate?: string } };
 
 // Define the context type
 interface TaskContextType {
@@ -30,6 +31,7 @@ interface TaskContextType {
   deleteTask: (id: string) => void;
   toggleTaskCompletion: (id: string) => void;
   moveTask: (taskId: string, newStartDate: string, newDueDate: string, newWeekNumber: number) => void;
+  moveTaskVisually: (taskId: string, newVisualWeekNumber: number, newVisualStartDate?: string) => void;
 }
 
 // Create the context
@@ -112,6 +114,22 @@ const taskReducer = (state: TaskState, action: TaskAction): TaskState => {
               startDate: newStartDate,
               dueDate: newDueDate,
               weekNumber: newWeekNumber,
+              updatedAt: new Date().toISOString(),
+            }
+            : task
+        ),
+      };
+    }
+    case 'MOVE_TASK_VISUALLY': {
+      const { taskId, newVisualWeekNumber, newVisualStartDate } = action.payload;
+      return {
+        ...state,
+        tasks: state.tasks.map((task) =>
+          task.id === taskId
+            ? {
+              ...task,
+              visualWeekNumber: newVisualWeekNumber,
+              visualStartDate: newVisualStartDate,
               updatedAt: new Date().toISOString(),
             }
             : task
@@ -354,6 +372,58 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  // Move task visually without changing actual due dates
+  const moveTaskVisually = async (
+    taskId: string,
+    newVisualWeekNumber: number,
+    newVisualStartDate?: string
+  ) => {
+    console.log('Moving task visually:', { taskId, newVisualWeekNumber, newVisualStartDate });
+
+    // Find the task to move
+    const task = state.tasks.find((t) => t.id === taskId);
+
+    if (!task) {
+      console.error('Task not found:', taskId);
+      addToast(`Task not found: ${taskId}`, 'error');
+      return;
+    }
+
+    // Update only visual positioning properties
+    dispatch({
+      type: 'MOVE_TASK_VISUALLY',
+      payload: { taskId, newVisualWeekNumber, newVisualStartDate },
+    });
+
+    // Update database with visual properties only
+    try {
+      const updatedTask = {
+        ...task,
+        visualWeekNumber: newVisualWeekNumber,
+        visualStartDate: newVisualStartDate,
+        updatedAt: new Date().toISOString(),
+      };
+
+      const response = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedTask),
+        cache: 'no-cache',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update task visual position');
+      }
+
+      console.log('Task visual position updated successfully');
+    } catch (error) {
+      console.error('Error updating task visual position:', error);
+      addToast('Failed to save visual position changes', 'error');
+    }
+  };
+
   return (
     <TaskContext.Provider
       value={{
@@ -363,6 +433,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         deleteTask,
         toggleTaskCompletion,
         moveTask,
+        moveTaskVisually,
       }}
     >
       {children}

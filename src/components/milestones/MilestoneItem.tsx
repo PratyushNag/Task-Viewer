@@ -29,7 +29,7 @@ const MilestoneItem: React.FC<MilestoneItemProps> = ({ milestone, onEdit }) => {
     : getDeadlineColor(milestone.dueDate);
 
   return (
-    <div className="border border-gray-200 rounded-lg mb-4 overflow-hidden">
+    <div className={`border rounded-lg mb-4 overflow-hidden ${isOverdue ? 'border-red-500 border-2' : 'border-gray-200'}`}>
       <div className="flex items-start">
         <div className="p-4 flex-grow">
           <div className="flex items-center">

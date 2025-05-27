@@ -11,11 +11,18 @@
     "start": "next start",
     "lint": "next lint",
     "postinstall": "next build",
-    "migrate": "node scripts/migrate-to-mongodb.js"
+    "migrate": "node scripts/migrate-to-mongodb.js",
+    "reset-data": "node scripts/reset-and-reload-data.js",
+    "reset-data:dry-run": "node scripts/reset-and-reload-data.js --dry-run",
+    "reset-data:force": "node scripts/reset-and-reload-data.js --force",
+    "reset-data:backup": "node scripts/reset-and-reload-data.js --backup",
+    "test-migration": "node scripts/test-migration.js"
   },
   "dependencies": {
     "@types/react-big-calendar": "^1.16.1",
+    "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "lucide-react": "^0.511.0",
     "mongodb": "^6.16.0",
     "mongoose": "^8.14.2",
     "next": "15.3.2",

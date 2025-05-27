@@ -5,11 +5,11 @@ import Task from '@/models/Task';
 // GET /api/tasks/[id] - Get a specific task
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
-    const taskId = params.id;
+    const { id: taskId } = await params;
 
     const task = await Task.findOne({ id: taskId });
 
@@ -33,11 +33,11 @@ export async function GET(
 // PUT /api/tasks/[id] - Update a task
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
-    const taskId = params.id;
+    const { id: taskId } = await params;
     console.log('API: Updating task with ID:', taskId);
 
     const body = await request.json();
@@ -72,11 +72,11 @@ export async function PUT(
 // DELETE /api/tasks/[id] - Delete a task
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectToDatabase();
-    const taskId = params.id;
+    const { id: taskId } = await params;
 
     const deletedTask = await Task.findOneAndDelete({ id: taskId });
 

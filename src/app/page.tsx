@@ -9,6 +9,9 @@ import {
 } from '@/utils/dataLoader';
 import TaskList from '@/components/tasks/TaskList';
 import SimpleDraggableTaskList from '@/components/tasks/SimpleDraggableTaskList';
+import { getPhaseName } from '@/utils/phaseUtils';
+import { generateOverdueRolloverTasks } from '@/utils/taskUtils';
+import { getCurrentWeekNumber } from '@/utils/dateUtils';
 
 export default function Home() {
   const { state: { tasks, loading: tasksLoading } } = useTaskContext();
@@ -37,17 +40,7 @@ export default function Home() {
     }));
   };
 
-  // Get phase name based on phase number
-  const getPhaseName = (phase: number): string => {
-    const phaseNames: Record<number, string> = {
-      0: 'Foundation & CSAT Mastery',
-      1: 'Core Syllabus Coverage (Integrated GS & Optional Part 1)',
-      2: 'Mains Syllabus Completion & Consolidation',
-      3: 'Prelims Intensive (Revision & Mocks)',
-      4: 'Mains Exclusive (Answer Writing & Test Series)'
-    };
-    return phaseNames[phase] || `Phase ${phase}`;
-  };
+  // Note: getPhaseName is now imported from utils/phaseUtils
 
   // Render loading state
   if (tasksLoading || milestonesLoading) {
@@ -62,14 +55,33 @@ export default function Home() {
   const phaseTasks = selectedPhase !== null ? getTasksForPhase(selectedPhase, tasks) : [];
   const phaseMilestones = selectedPhase !== null ? getMilestonesForPhase(selectedPhase, milestones) : [];
 
-  // Group tasks by week
+  // Generate rollover tasks for overdue items
+  const currentWeekNumber = getCurrentWeekNumber();
+  const rolloverTasks = generateOverdueRolloverTasks(tasks, currentWeekNumber, 10);
+
+  // Combine original tasks with rollover tasks
+  const allTasks = [...phaseTasks, ...rolloverTasks.filter(rolloverTask => {
+    // Only include rollover tasks that belong to the current phase
+    const rolloverWeekNumber = rolloverTask.visualWeekNumber || rolloverTask.weekNumber;
+    if (!rolloverWeekNumber) return false;
+
+    // Check if the rollover task's visual week belongs to the selected phase
+    const phaseWeeks = selectedPhase !== null ? getTasksForPhase(selectedPhase, tasks).map(t => t.weekNumber).filter(Boolean) : [];
+    const minWeek = Math.min(...phaseWeeks);
+    const maxWeek = Math.max(...phaseWeeks);
+
+    return rolloverWeekNumber >= minWeek && rolloverWeekNumber <= maxWeek;
+  })];
+
+  // Group tasks by week (using visual week number for rollover tasks)
   const tasksByWeek: Record<number, typeof tasks> = {};
-  phaseTasks.forEach(task => {
-    if (task.weekNumber) {
-      if (!tasksByWeek[task.weekNumber]) {
-        tasksByWeek[task.weekNumber] = [];
+  allTasks.forEach(task => {
+    const weekNumber = task.visualWeekNumber || task.weekNumber;
+    if (weekNumber) {
+      if (!tasksByWeek[weekNumber]) {
+        tasksByWeek[weekNumber] = [];
       }
-      tasksByWeek[task.weekNumber].push(task);
+      tasksByWeek[weekNumber].push(task);
     }
   });
 
@@ -77,20 +89,20 @@ export default function Home() {
   const phaseWeeks = Object.keys(tasksByWeek).map(Number).sort((a, b) => a - b);
 
   return (
-    <div className="space-y-8">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gunmetal">Phase View</h1>
+    <div className="space-y-6 sm:space-y-8">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gunmetal">Phase View</h1>
       </div>
 
       {/* Phase Selection */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold text-space-cadet mb-4">Phases</h2>
-        <div className="flex flex-wrap gap-4">
+      <div className="mb-6 sm:mb-8">
+        <h2 className="text-lg sm:text-xl font-semibold text-space-cadet mb-4">Phases</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           {phases.map(phase => (
             <button
               key={phase}
               onClick={() => setSelectedPhase(phase)}
-              className={`px-6 py-4 rounded-lg text-center min-w-[280px] transition-colors shadow-sm text-white`}
+              className={`px-4 sm:px-6 py-3 sm:py-4 rounded-lg text-center transition-colors shadow-sm text-white min-h-[44px]`}
               style={{
                 backgroundColor: selectedPhase === phase ? '#7E52A0' : '#29274C'
               }}
@@ -105,21 +117,21 @@ export default function Home() {
                 }
               }}
             >
-              <div className="font-medium">Phase {phase}:</div>
-              <div className="font-semibold text-sm">{getPhaseName(phase)}</div>
+              <div className="font-medium text-sm sm:text-base">Phase {phase}:</div>
+              <div className="font-semibold text-xs sm:text-sm">{getPhaseName(phase)}</div>
             </button>
           ))}
         </div>
       </div>
 
       {selectedPhase !== null && (
-        <div className="flex">
+        <div className="flex flex-col md:flex-row">
           {/* Left sidebar with toggle buttons */}
-          <div className="w-48 flex-shrink-0 mr-6">
-            <div className="space-y-3">
+          <div className="w-full md:w-48 flex-shrink-0 md:mr-6 mb-4 md:mb-0">
+            <div className="flex md:flex-col space-x-2 md:space-x-0 md:space-y-3 overflow-x-auto md:overflow-x-visible">
               <button
                 onClick={() => setActiveView('milestones')}
-                className={`block text-left py-2 px-4 font-medium rounded-md w-full text-white`}
+                className={`flex-shrink-0 md:block text-center md:text-left py-2 px-4 font-medium rounded-md w-full md:w-full text-white min-h-[44px] min-w-[120px] md:min-w-0`}
                 style={{
                   backgroundColor: activeView === 'milestones' ? '#D295BF' : '#29274C'
                 }}
@@ -138,7 +150,7 @@ export default function Home() {
               </button>
               <button
                 onClick={() => setActiveView('weeks')}
-                className={`block text-left py-2 px-4 font-medium rounded-md w-full text-white`}
+                className={`flex-shrink-0 md:block text-center md:text-left py-2 px-4 font-medium rounded-md w-full md:w-full text-white min-h-[44px] min-w-[120px] md:min-w-0`}
                 style={{
                   backgroundColor: activeView === 'weeks' ? '#D295BF' : '#29274C'
                 }}

@@ -15,6 +15,9 @@ export interface ITask extends Document {
   category?: string;
   phase?: number;
   primaryFocus?: string;
+  // Visual positioning properties (separate from actual due dates)
+  visualWeekNumber?: number;
+  visualStartDate?: Date | string;
 }
 
 // Define the Task schema
@@ -35,6 +38,9 @@ const TaskSchema: Schema = new Schema(
     category: { type: String },
     phase: { type: Number },
     primaryFocus: { type: String },
+    // Visual positioning properties (separate from actual due dates)
+    visualWeekNumber: { type: Number },
+    visualStartDate: { type: Date },
   },
   {
     timestamps: true, // Automatically add createdAt and updatedAt fields

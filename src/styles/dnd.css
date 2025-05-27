@@ -10,6 +10,16 @@
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3) !important;
   background-color: #7E52A0 !important;
   color: white !important;
+  transition: none !important;
+  /* Disable transitions during drag */
+}
+
+/* Ensure clean state when not dragging */
+.task-item:not(.dragging):not(.being-dragged):not(.touch-dragging) {
+  opacity: 1;
+  transform: scale(1);
+  z-index: auto;
+  transition: all 0.2s ease;
 }
 
 /* Droppable area styles */
@@ -141,6 +151,48 @@
 .task-item.touch-dragging {
   opacity: 0.5;
   transform: scale(0.95);
+  transition: none !important;
+  /* Disable transitions during touch drag */
+}
+
+/* Force cleanup styles - ensures no lingering drag effects */
+.task-item.drag-cleanup {
+  opacity: 1 !important;
+  transform: none !important;
+  z-index: auto !important;
+  background-color: #C2AFF0 !important;
+  color: inherit !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease !important;
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  right: auto !important;
+  bottom: auto !important;
+}
+
+/* Aggressive cleanup for any lingering drag elements */
+[data-rbd-draggable-id]:not([data-rbd-drag-handle-draggable-id]) {
+  transform: none !important;
+  transition: transform 0.2s ease !important;
+}
+
+/* Clean up any fixed positioned elements that might be drag previews */
+.task-item[style*="position: fixed"],
+.task-item[style*="position: absolute"] {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  transform: none !important;
+  z-index: auto !important;
+}
+
+/* Ensure no task items have lingering transforms */
+.task-item:not(.dragging):not(.being-dragged):not(.touch-dragging):not(.is-dragging) {
+  transform: none !important;
+  position: static !important;
+  z-index: auto !important;
+  opacity: 1 !important;
 }
 
 /* Drop target active during touch drag */

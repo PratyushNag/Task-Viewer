@@ -23,7 +23,7 @@ const DroppableWeekList: React.FC<DroppableWeekListProps> = ({
   expandedWeeks,
   toggleWeek,
 }) => {
-  const { moveTask } = useTaskContext();
+  const { moveTaskVisually } = useTaskContext();
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -81,38 +81,53 @@ const DroppableWeekList: React.FC<DroppableWeekListProps> = ({
       return;
     }
 
-    // Calculate new start and due dates based on the destination week
+    // Calculate visual start date for the destination week (for display purposes only)
     const destWeekStart = getWeekStartDate(destWeekNumber);
 
-    // Determine how many days to add to the week start date
-    // For simplicity, we'll keep the same day of the week
-    const taskDate = new Date(task.startDate);
-    const dayOfWeek = taskDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    // Determine the day offset based on task category or keep same day of week
+    let dayOffset = 0;
+    if (task.category) {
+      // Use category-based positioning
+      switch (task.category) {
+        case 'GS Subject 1':
+          dayOffset = 0; // Monday
+          break;
+        case 'GS Subject 2 / Optional':
+          dayOffset = 1; // Tuesday
+          break;
+        case 'CSAT':
+          dayOffset = 2; // Wednesday
+          break;
+        case 'Current Affairs':
+          dayOffset = 4; // Friday
+          break;
+        case 'Weekly Test':
+          dayOffset = 6; // Sunday
+          break;
+        default:
+          dayOffset = 3; // Thursday for any other category
+      }
+    } else if (task.startDate) {
+      // Keep the same day of the week if no category
+      const taskDate = new Date(task.startDate);
+      const dayOfWeek = taskDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+      dayOffset = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust for Sunday
+    }
 
-    // Calculate new start date (same day of week in the new week)
-    const newStartDate = addDays(destWeekStart, dayOfWeek === 0 ? 6 : dayOfWeek - 1); // Adjust for Sunday
+    // Calculate visual start date (for display positioning only)
+    const visualStartDate = addDays(destWeekStart, dayOffset);
+    const formattedVisualStartDate = format(visualStartDate, 'yyyy-MM-dd');
 
-    // Calculate new due date (maintain the same duration)
-    const taskDuration = Math.max(
-      1,
-      Math.round((new Date(task.dueDate).getTime() - new Date(task.startDate).getTime()) / (1000 * 60 * 60 * 24))
-    );
-    const newDueDate = addDays(newStartDate, taskDuration);
-
-    // Format dates as strings
-    const formattedStartDate = format(newStartDate, 'yyyy-MM-dd');
-    const formattedDueDate = format(newDueDate, 'yyyy-MM-dd');
-
-    console.log('Moving task:', {
+    console.log('Moving task visually:', {
       taskId: task.id,
       from: sourceWeekNumber,
       to: destWeekNumber,
-      newStartDate: formattedStartDate,
-      newDueDate: formattedDueDate
+      visualStartDate: formattedVisualStartDate,
+      originalDueDate: task.dueDate, // This remains unchanged
     });
 
-    // Call the moveTask function from context
-    moveTask(task.id, formattedStartDate, formattedDueDate, destWeekNumber);
+    // Call the visual movement function (preserves original due dates)
+    moveTaskVisually(task.id, destWeekNumber, formattedVisualStartDate);
   };
 
   return (

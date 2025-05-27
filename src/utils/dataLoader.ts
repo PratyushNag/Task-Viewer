@@ -2,6 +2,7 @@
  * Utility functions for loading data from MongoDB API
  */
 import { Task, Milestone } from '@/types';
+import { getPhaseForWeek } from './phaseUtils';
 
 /**
  * Load tasks from MongoDB API
@@ -170,20 +171,49 @@ export const loadStudyPlanMilestones = async (): Promise<Milestone[]> => {
 
 /**
  * Get tasks for a specific phase
+ * Includes tasks that don't have a phase but have a weekNumber that maps to the phase
  */
 export const getTasksForPhase = (phase: number, tasks: Task[]): Task[] => {
-  return tasks.filter(task => 'phase' in task && task.phase === phase);
+  return tasks.filter(task => {
+    // If task has a phase, use it directly
+    if ('phase' in task && typeof task.phase === 'number') {
+      return task.phase === phase;
+    }
+
+    // If task doesn't have a phase but has a weekNumber, calculate phase from weekNumber
+    if ('weekNumber' in task && typeof task.weekNumber === 'number') {
+      return getPhaseForWeek(task.weekNumber) === phase;
+    }
+
+    // If task has neither phase nor weekNumber, don't include it
+    return false;
+  });
 };
 
 /**
  * Get milestones for a specific phase
+ * Includes milestones that don't have a phase but have a weekNumber that maps to the phase
  */
 export const getMilestonesForPhase = (phase: number, milestones: Milestone[]): Milestone[] => {
-  return milestones.filter(milestone => 'phase' in milestone && milestone.phase === phase);
+  return milestones.filter(milestone => {
+    // If milestone has a phase, use it directly
+    if ('phase' in milestone && typeof milestone.phase === 'number') {
+      return milestone.phase === phase;
+    }
+
+    // If milestone doesn't have a phase but has a weekNumber, calculate phase from weekNumber
+    if ('weekNumber' in milestone && typeof milestone.weekNumber === 'number') {
+      return getPhaseForWeek(milestone.weekNumber) === phase;
+    }
+
+    // If milestone has neither phase nor weekNumber, don't include it
+    return false;
+  });
 };
 
 /**
  * Get all unique phase numbers from tasks and milestones
+ * Includes phases calculated from weekNumbers for items without explicit phases
  */
 export const getAllPhases = (tasks: Task[], milestones: Milestone[]): number[] => {
   const phases = new Set<number>();
@@ -191,12 +221,16 @@ export const getAllPhases = (tasks: Task[], milestones: Milestone[]): number[] =
   tasks.forEach(task => {
     if ('phase' in task && typeof task.phase === 'number') {
       phases.add(task.phase);
+    } else if ('weekNumber' in task && typeof task.weekNumber === 'number') {
+      phases.add(getPhaseForWeek(task.weekNumber));
     }
   });
 
   milestones.forEach(milestone => {
     if ('phase' in milestone && typeof milestone.phase === 'number') {
       phases.add(milestone.phase);
+    } else if ('weekNumber' in milestone && typeof milestone.weekNumber === 'number') {
+      phases.add(getPhaseForWeek(milestone.weekNumber));
     }
   });
 

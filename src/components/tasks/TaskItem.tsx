@@ -2,7 +2,8 @@
 
 import React, { useRef } from 'react';
 import { Task } from '@/types';
-import { formatDate, isPast } from '@/utils/dateUtils';
+import { formatDate } from '@/utils/dateUtils';
+import { isTaskOverdue, getTaskBorderClasses, getOverdueTextClasses, getEnhancedTaskBorderClasses, isRolloverTask } from '@/utils/taskUtils';
 import { useTaskContext } from '@/context';
 import { StrictDraggable } from '@/components/dnd/DragDropWrapper';
 import DragHandleIcon from '@/components/dnd/DragHandleIcon';
@@ -33,7 +34,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
     high: 'bg-space-cadet/30 text-black',
   };
 
-  const isOverdue = !task.completed && isPast(task.dueDate);
+  const isOverdue = isTaskOverdue(task);
+  const isRollover = isRolloverTask(task);
 
   return (
     <StrictDraggable
@@ -45,7 +47,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          className={`p-4 mb-3 rounded-lg shadow-sm border task-item ${isOverdue ? 'border-red-300' : 'border-space-cadet/30'
+          className={`p-4 mb-3 rounded-lg shadow-sm border task-item ${getEnhancedTaskBorderClasses(task, 'border-space-cadet/30')
             } ${snapshot.isDragging ? 'dragging' : ''}`}
           style={{
             backgroundColor: snapshot.isDragging ? '#7E52A0' : '#C2AFF0',
@@ -75,6 +77,11 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
                     }`}>
                     {task.title}
                   </h3>
+                  {isRollover && (
+                    <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-300">
+                      Overdue Reminder
+                    </span>
+                  )}
                   <span
                     ref={dragHandleRef}
                     className="ml-2 flex items-center justify-center p-1 rounded drag-handle"
@@ -103,7 +110,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, index, onEdit }) => {
                         Start: {formatDate(task.startDate)}
                       </span>
                     )}
-                    <span className={`text-xs ${isOverdue ? 'text-red-600 font-medium' : 'text-black/70'
+                    <span className={`text-xs ${getOverdueTextClasses(task, 'text-black/70')
                       }`}>
                       {isOverdue ? 'Overdue: ' : 'Due: '}
                       {formatDate(task.dueDate)}
